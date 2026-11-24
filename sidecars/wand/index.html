@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>苍蓝魔杖 · Azure Wand</title>
+  <style>
+    :root {
+      --bg: #111522;
+      --panel: #191e30;
+      --panel-2: #21273d;
+      --panel-hover: #28304a;
+      --border: #2c3550;
+      --text: #eef2fa;
+      --muted: #8f9bb8;
+      --accent: #38bdf8;
+      --accent-2: #6366f1;
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --danger: #fb7185;
+      --pill-bg: rgba(143, 155, 184, 0.14);
+    }
+    [data-theme="light"] {
+      --bg: #f3f6fc;
+      --panel: #ffffff;
+      --panel-2: #edf2fb;
+      --panel-hover: #e4ecfa;
+      --border: #d5dfef;
+      --text: #162033;
+      --muted: #5a6a86;
+      --accent: #0284c7;
+      --accent-2: #4f46e5;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #e11d48;
+      --pill-bg: rgba(90, 106, 134, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    button, input, select, textarea { font-family: inherit; font-size: 12.5px; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 11px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand-icon {
+      width: 26px; height: 26px; border-radius: 8px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; font-weight: 700;
+      box-shadow: 0 2px 10px rgba(56, 189, 248, 0.35);
+    }
+    .brand h1 { margin: 0; font-size: 14.5px; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.16); color: var(--accent); font-weight: 500;
+    }
+    .badge.ok { background: rgba(52, 211, 153, 0.16); color: var(--ok); }
+    .badge.warn { background: rgba(251, 191, 36, 0.18); color: var(--warn); }
+    .badge.danger { background: rgba(251, 113, 133, 0.16); color: var(--danger); }
+    .badge.neutral { background: var(--pill-bg); color: var(--muted); }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 6px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.12s;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn:hover { background: var(--panel-hover); border-color: var(--accent); }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.danger { border-color: rgba(251, 113, 133, 0.45); color: var(--danger); }
+    .btn.sm { padding: 4px 9px; font-size: 11.5px; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .tabs-bar {
+      display: flex; gap: 6px; padding: 10px 16px 0;
+      flex-wrap: wrap; border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .tab-btn {
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 7px 12px;
+      border-radius: 9px 9px 0 0;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--panel-2); }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.22));
+      border-color: var(--accent);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    main { max-width: 980px; margin: 0 auto; padding: 14px 16px 40px; }
+    .view.hidden { display: none; }
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .between { justify-content: space-between; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .card-title { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .muted { color: var(--muted); font-size: 12px; }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .preset-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 12px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .preset-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .preset-card.active {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(99, 102, 241, 0.14));
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.28);
+    }
+
+    .form-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 9px 0;
+      border-bottom: 1px solid rgba(143, 155, 184, 0.12);
+      flex-wrap: wrap;
+    }
+    .form-row:last-child { border-bottom: none; padding-bottom: 2px; }
+    .form-label { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 190px; }
+    .form-label strong { font-size: 12.8px; font-weight: 600; }
+
+    input[type="text"], input[type="number"], select, textarea {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 6px 9px;
+      outline: none;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    input[type="range"] { accent-color: var(--accent); cursor: pointer; }
+
+    .switch {
+      position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; border-radius: 999px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      cursor: pointer; transition: 0.2s;
+    }
+    .slider:before {
+      content: ""; position: absolute; left: 2px; top: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--muted); transition: 0.2s;
+    }
+    .switch input:checked + .slider {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(18px); background: #fff;
+    }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--panel-2);
+      color: var(--muted); font-size: 11.5px; cursor: pointer;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--text); }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+    }
+    .tool-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 10px; border-radius: 9px;
+      border: 1px solid var(--border); background: var(--panel-2);
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .tool-item:hover { border-color: var(--accent); }
+    .tool-item.checked {
+      border-color: rgba(56, 189, 248, 0.55);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .tool-item input { margin-top: 2px; accent-color: var(--accent); }
+
+    .win-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow: auto; }
+    .win-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 7px 10px; border-radius: 8px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .win-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 66%; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .stat-box {
+      padding: 10px 12px; border-radius: 10px;
+      background: var(--panel-2); border: 1px solid var(--border);
+    }
+    .stat-k { font-size: 11px; color: var(--muted); }
+    .stat-v { font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .prog-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--panel-2); border: 1px solid var(--border); font-size: 12px;
+    }
+    .prog-tag button {
+      border: none; background: transparent; color: var(--danger);
+      cursor: pointer; padding: 0 2px; font-weight: 700;
+    }
+
+    .toast {
+      position: fixed; right: 16px; bottom: 16px; z-index: 999;
+      padding: 9px 14px; border-radius: 9px;
+      background: var(--panel); border: 1px solid var(--accent);
+      color: var(--text); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      font-size: 12.5px; opacity: 0; transform: translateY(8px);
+      pointer-events: none; transition: all 0.2s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .save-bar {
+      position: sticky; bottom: 12px; z-index: 15;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+      padding: 10px 14px; border-radius: 11px;
+      background: var(--panel); border: 1px solid var(--accent);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+      margin-top: 14px;
+    }
+    .save-bar.hidden { display: none; }
+    code {
+      background: var(--panel-2); padding: 1px 5px; border-radius: 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-icon">✦</span>
+      <div>
+        <div class="row" style="gap:6px;">
+          <h1>苍蓝魔杖</h1>
+          <span class="badge" id="ver-badge">v1.0.0</span>
+          <span class="badge ok" id="mode-badge">静默低打扰</span>
+        </div>
+        <div class="muted" style="font-size:11px;">Windows 桌面与网页低打扰可视化操控台 · 按 Esc 随时急停</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn sm" onclick="triggerPreview('indicator')" title="在屏幕上实时预览边缘光晕与鼠标标签">✨ 预览光标提示</button>
+      <button class="btn sm" onclick="triggerPreview('progress')" title="在屏幕角落预览思考与操作浮窗">🪟 预览浮窗</button>
+      <button class="btn sm" onclick="runSelfTest()" id="btn-selftest">🩺 引擎自检</button>
+    </div>
+  </header>
+
+  <nav class="tabs-bar">
+    <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">✦ 概览与快控</button>
+    <button class="tab-btn" data-tab="visual" onclick="switchTab('visual')">🖱️ 鼠标与浮窗定制</button>
+    <button class="tab-btn" data-tab="channel" onclick="switchTab('channel')">🌐 桌面与浏览器</button>
+    <button class="tab-btn" data-tab="tools" onclick="switchTab('tools')">🧰 26 项工具箱</button>
+    <button class="tab-btn" data-tab="security" onclick="switchTab('security')">🛡️ 安全与白名单</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: 概览与快控 -->
+    <section id="tab-overview" class="view stack">
+      <div class="status-grid" id="status-grid">
+        <div class="stat-box"><div class="stat-k">工作模式</div><div class="stat-v" id="st-mode">--</div></div>
+        <div class="stat-box"><div class="stat-k">已启用工具</div><div class="stat-v" id="st-tools">--</div></div>
+        <div class="stat-box"><div class="stat-k">鼠标指示与光晕</div><div class="stat-v" id="st-indicator">--</div></div>
+        <div class="stat-box"><div class="stat-k">思考操作浮窗</div><div class="stat-v" id="st-overlay">--</div></div>
+      </div>
+
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">⚡ 一键场景预设</div>
+            <div class="muted">切换后立即写入热配置文件，无需手动逐项调整。</div>
+          </div>
+          <button class="btn sm" onclick="resetDefaults()">↺ 恢复默认</button>
+        </div>
+        <div class="preset-grid" id="preset-grid"></div>
+      </div>
+
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🩺 引擎健康自检结果</div>
+            <div class="muted">实时检测 PowerShell UIA、SendInput、PostMessage、OCR 与屏幕分辨率。</div>
+          </div>
+          <button class="btn sm primary" onclick="runSelfTest()">运行自检</button>
+        </div>
+        <div id="selftest-box" class="muted">点击右上角「运行自检」检测当前 Windows 操控引擎状态。</div>
+      </div>
+
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🪟 当前桌面窗口探测</div>
+            <div class="muted">快速确认苍蓝魔杖可见的桌面窗口与句柄（不激活、不抢焦点）。</div>
+          </div>
+          <button class="btn sm" onclick="loadWindows()">↻ 刷新窗口列表</button>
+        </div>
+        <div id="win-list" class="win-list"><div class="muted">点击「刷新窗口列表」实时扫描当前桌面窗口。</div></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 鼠标与浮窗定制 -->
+    <section id="tab-visual" class="view stack hidden">
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🖱️ 独立鼠标指示与屏幕接管提示</div>
+            <div class="muted">网页通道默认后台蓝箭头零打扰；桌面坐标操控借用鼠标时展示屏幕光晕与标签，随时按 Esc 急停。</div>
+          </div>
+          <button class="btn sm primary" onclick="triggerPreview('indicator')">✨ 立即预览</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>开启屏幕边缘光晕与横幅提示</strong>
+            <span class="muted">桌面操控借用鼠标键盘时点亮屏幕边缘并显示提示条</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-indicatorEnabled" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>开启鼠标旁独立指示标签</strong>
+            <span class="muted">指针附近跟随显示小型操控徽章，清楚知道魔杖此刻在点哪里</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-cursorIndicatorEnabled" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>远程桌面与录屏可见</strong>
+            <span class="muted">开启后录屏/远程共享画面也能看到光晕提示和浮窗</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-remoteIndicatorVisible" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>自定义横幅提示文字</strong>
+            <span class="muted">支持任意个性文案（最多 120 字）</span>
+            <div class="row" id="indicator-tpls" style="margin-top:5px;"></div>
+          </div>
+          <input type="text" id="f-indicatorText" maxlength="120" style="width:280px;max-width:100%;" oninput="onFieldChange()" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>提示条停靠位置</strong>
+            <span class="muted">顶部居中或底部居中</span>
+          </div>
+          <select id="f-indicatorPosition" onchange="onFieldChange()">
+            <option value="top">屏幕顶部（Top）</option>
+            <option value="bottom">屏幕底部（Bottom）</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>操作结束后隐藏延时：<span id="v-indicatorIdleMs">800</span> ms</strong>
+            <span class="muted">单步操作完成后保留提示条的缓冲时长（200~3000 ms）</span>
+          </div>
+          <input type="range" id="f-indicatorIdleMs" min="200" max="3000" step="50" style="width:200px;" oninput="document.getElementById('v-indicatorIdleMs').textContent=this.value;onFieldChange()" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>自定义急停快捷键（Esc 始终永久有效）</strong>
+            <span class="muted">例如 <code>Ctrl+Shift+X</code>、<code>Pause</code>、<code>F12</code>，留空仅用 Esc</span>
+          </div>
+          <input type="text" id="f-stopShortcut" placeholder="如 Ctrl+Shift+X（留空仅 Esc）" style="width:220px;" oninput="onFieldChange()" />
+        </div>
+      </div>
+
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🪟 思考与操作悬浮窗定制</div>
+            <div class="muted">屏幕角落实时播报当前步骤与动作状态，支持鼠标穿透与尺寸位置自由调节。</div>
+          </div>
+          <button class="btn sm primary" onclick="triggerPreview('progress')">🪟 立即预览浮窗</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>启用思考与操作浮窗</strong>
+            <span class="muted">操控期间自动浮出步骤与状态卡片</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-progressOverlayEnabled" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>浮窗内容显示模式</strong>
+            <span class="muted">原文逐步记录或精炼摘要</span>
+          </div>
+          <select id="f-progressOverlayMode" onchange="onFieldChange()">
+            <option value="source">原文步骤（Source）</option>
+            <option value="summary">精炼摘要（Summary）</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>浮窗不透明度：<span id="v-progressOverlayOpacity">72</span>%</strong>
+            <span class="muted">调节半透明毛玻璃感（20%~100%）</span>
+          </div>
+          <input type="range" id="f-progressOverlayOpacity" min="20" max="100" step="2" style="width:200px;" oninput="document.getElementById('v-progressOverlayOpacity').textContent=this.value;onFieldChange()" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>浮窗尺寸（宽 × 高 px）</strong>
+            <span class="muted">宽度 240~1600，高度 160~1600</span>
+          </div>
+          <div class="row">
+            <input type="number" id="f-progressOverlayWidth" min="240" max="1600" style="width:88px;" oninput="onFieldChange()" />
+            <span class="muted">×</span>
+            <input type="number" id="f-progressOverlayHeight" min="160" max="1600" style="width:88px;" oninput="onFieldChange()" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>浮窗停靠位置</strong>
+            <span class="muted">选择四角吸附或自定义屏幕坐标</span>
+          </div>
+          <select id="f-progressOverlayPosition" onchange="toggleCustomPos();onFieldChange()">
+            <option value="top-right">右上角（top-right）</option>
+            <option value="top-left">左上角（top-left）</option>
+            <option value="bottom-right">右下角（bottom-right）</option>
+            <option value="bottom-left">左下角（bottom-left）</option>
+            <option value="custom">自定义坐标（custom）</option>
+          </select>
+        </div>
+
+        <div class="form-row" id="row-custom-pos">
+          <div class="form-label">
+            <strong>自定义浮窗坐标（X / Y）</strong>
+            <span class="muted">仅在停靠位置为「自定义坐标」时生效</span>
+          </div>
+          <div class="row">
+            <input type="number" id="f-progressOverlayX" style="width:88px;" placeholder="X" oninput="onFieldChange()" />
+            <input type="number" id="f-progressOverlayY" style="width:88px;" placeholder="Y" oninput="onFieldChange()" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>锁定浮窗并穿透鼠标点击</strong>
+            <span class="muted">开启后鼠标可直接穿透浮窗操作底层应用，完全不挡手</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-progressOverlayLocked" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>浮窗锁定切换快捷键</strong>
+            <span class="muted">可选，如 <code>Ctrl+Alt+L</code></span>
+          </div>
+          <input type="text" id="f-progressLockShortcut" placeholder="留空不设快捷键" style="width:200px;" oninput="onFieldChange()" />
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 桌面与浏览器 -->
+    <section id="tab-channel" class="view stack hidden">
+      <div class="card stack">
+        <div class="card-title">🖥️ 桌面并行协作策略</div>
+        <div class="form-row">
+          <div class="form-label">
+            <strong>工作方式（Desktop Target）</strong>
+            <span class="muted">「低打扰」优先后台 UIA 且等待你松手/输入法上屏后再短暂借用，做完立刻归还焦点</span>
+          </div>
+          <select id="f-desktopTarget" onchange="toggleHyperv();onFieldChange()">
+            <option value="quiet">低打扰 · 后台优先（quiet，推荐）</option>
+            <option value="fast">极速 · 前台直控（fast）</option>
+            <option value="hyperv">Hyper-V 虚拟机隔离（hyperv）</option>
+          </select>
+        </div>
+
+        <div class="form-row" id="row-hyperv">
+          <div class="form-label">
+            <strong>Hyper-V 虚拟机名称</strong>
+            <span class="muted">仅在 Hyper-V 模式下生效</span>
+          </div>
+          <input type="text" id="f-hypervVm" placeholder="输入 VM 名称" style="width:220px;" oninput="onFieldChange()" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>截图传输画质（WCU_IMAGE_MODE）</strong>
+            <span class="muted">修改后需重载 MCP 生效；省流模式可降低视觉 Token 消耗</span>
+          </div>
+          <select id="f-imageMode" onchange="onFieldChange()">
+            <option value="default">智能均衡（默认）</option>
+            <option value="compact">省流压缩（compact）</option>
+            <option value="full">原始高清（full）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card stack">
+        <div class="card-title">🌐 后台网页通道（独立蓝箭头 · 零抢鼠标）</div>
+        <div class="form-row">
+          <div class="form-label">
+            <strong>网页优先使用浏览器后台协议（CDP）</strong>
+            <span class="muted">在网页中直接后台点选元素并画蓝色虚拟箭头，完全不影响你的物理鼠标</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-browserFirst" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>显示专用操控浏览器窗口</strong>
+            <span class="muted">让你能实时看到网页操作过程（窗口保持在后台不抢前台）</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-browserVisible" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>使用的浏览器内核</strong>
+            <span class="muted">默认跟随 Windows 默认浏览器</span>
+          </div>
+          <select id="f-browserApp" onchange="onFieldChange()">
+            <option value="default">系统默认</option>
+            <option value="edge">Microsoft Edge</option>
+            <option value="chrome">Google Chrome</option>
+            <option value="firefox">Mozilla Firefox</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>保留操控浏览器的网站登录态</strong>
+            <span class="muted">关闭时使用临时干净配置；开启后保留长期 Cookie 与登录态</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-browserSignIn" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>连接我当前已打开的浏览器（实验性）</strong>
+            <span class="muted">开启后可在你授权的情况下直接操控已有 Chrome/Edge 标签页</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-browserAttachUser" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: 26 项工具箱 -->
+    <section id="tab-tools" class="view stack hidden">
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🧰 工具加载方案与精细勾选</div>
+            <div class="muted">修改工具集会在下次 MCP 重载时生效；「精简 12」与「懒加载」可显著节省模型上下文。</div>
+          </div>
+          <select id="f-toolPreset" onchange="onPresetSelectChange()">
+            <option value="full">全部 26 项完整工具（full）</option>
+            <option value="lite">精简 12 项常用工具（lite）</option>
+            <option value="lazy">极简懒加载（lazy，按需展开）</option>
+            <option value="custom">自定义逐项勾选（custom）</option>
+          </select>
+        </div>
+        <div class="row">
+          <button class="btn sm" onclick="selectToolsMode('all')">全选 26 项</button>
+          <button class="btn sm" onclick="selectToolsMode('lite')">仅选常用 12 项</button>
+          <button class="btn sm" onclick="selectToolsMode('readonly')">仅选只读观测项</button>
+          <span class="muted" id="tools-sel-count">已选 0 / 26 项</span>
+        </div>
+        <div id="tools-groups" class="stack"></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: 安全与白名单 -->
+    <section id="tab-security" class="view stack hidden">
+      <div class="card stack">
+        <div class="card-title">🛡️ 启动程序安全白名单（launch_app）</div>
+        <div class="muted">除系统基础安全项外，允许苍蓝魔杖直接启动的额外程序名或绝对路径（如模拟器、工具软件）。</div>
+        <div class="row">
+          <input type="text" id="prog-input" placeholder="输入程序名或路径，如 MuMuPlayer.exe 或 notepad.exe" style="flex:1;min-width:220px;" onkeydown="if(event.key==='Enter') addProgram()" />
+          <button class="btn primary sm" onclick="addProgram()">+ 添加白名单</button>
+        </div>
+        <div class="tag-list" id="prog-list"></div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>允许向启动程序传递命令行参数</strong>
+            <span class="muted">默认关闭更安全；仅在需要给特定脚本/程序传参时开启</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="f-allowLaunchArguments" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>批量连贯动作（batch）超时上限：<span id="v-batchBudgetMs">30</span> 秒</strong>
+            <span class="muted">防止长批处理任务异常卡住（5~120 秒）</span>
+          </div>
+          <input type="range" id="f-batchBudgetMs" min="5000" max="120000" step="5000" style="width:200px;" oninput="document.getElementById('v-batchBudgetMs').textContent=Math.round(this.value/1000);onFieldChange()" />
+        </div>
+      </div>
+
+      <div class="card stack">
+        <div class="card-title">📁 配置存储与快捷备份</div>
+        <div class="muted">热配置文件路径：<code id="cfg-path">--</code></div>
+        <div class="row">
+          <button class="btn sm" onclick="exportConfig()">📋 复制配置 JSON</button>
+          <button class="btn sm danger" onclick="resetDefaults()">↺ 恢复全部默认设置</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="save-bar hidden" id="save-bar">
+      <span style="font-size:12.5px;">✨ 有尚未保存的自定义修改（保存后视觉提示与工作模式实时热生效）</span>
+      <div class="row">
+        <button class="btn sm" onclick="discardChanges()">放弃修改</button>
+        <button class="btn sm primary" onclick="saveConfig()">💾 保存配置</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const TOKEN = new URLSearchParams(location.search).get("token") || "";
+    let state = null;
+    let draft = null;
+    let dirty = false;
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    async function api(url, opts = {}) {
+      const headers = { ...(opts.headers || {}) };
+      if (opts.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+      if (TOKEN) headers["x-sidecar-token"] = TOKEN;
+      const res = await fetch(url, { ...opts, headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    }
+
+    function switchTab(id) {
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
+      document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== "tab-" + id));
+    }
+
+    function markDirty(flag) {
+      dirty = Boolean(flag);
+      document.getElementById("save-bar").classList.toggle("hidden", !dirty);
+    }
+
+    function toggleCustomPos() {
+      const show = document.getElementById("f-progressOverlayPosition").value === "custom";
+      document.getElementById("row-custom-pos").style.display = show ? "flex" : "none";
+    }
+
+    function toggleHyperv() {
+      const show = document.getElementById("f-desktopTarget").value === "hyperv";
+      document.getElementById("row-hyperv").style.display = show ? "flex" : "none";
+    }
+
+    function fillFormFromDraft() {
+      const c = draft;
+      document.getElementById("ver-badge").textContent = "v" + (state.version || "1.0.0");
+      const modeText = c.desktopTarget === "fast" ? "极速前台" : c.desktopTarget === "hyperv" ? "Hyper-V 隔离" : "静默低打扰";
+      document.getElementById("mode-badge").textContent = modeText;
+      document.getElementById("st-mode").textContent = modeText;
+      const toolCnt = c.toolPreset === "lite" ? state.meta.toolCounts.lite : c.toolPreset === "lazy" ? "懒加载" : (c.enabledTools || []).length;
+      document.getElementById("st-tools").textContent = typeof toolCnt === "number" ? `${toolCnt} / ${state.meta.toolCounts.all}` : toolCnt;
+      document.getElementById("st-indicator").textContent = c.indicatorEnabled ? (c.cursorIndicatorEnabled ? "光晕 + 鼠标标签" : "仅屏幕光晕") : "已关闭";
+      document.getElementById("st-overlay").textContent = c.progressOverlayEnabled ? `${c.progressOverlayPosition} · ${c.progressOverlayOpacity}%` : "已关闭";
+      document.getElementById("cfg-path").textContent = state.meta.configPath || "--";
+
+      const boolIds = [
+        "indicatorEnabled", "cursorIndicatorEnabled", "remoteIndicatorVisible",
+        "progressOverlayEnabled", "progressOverlayLocked",
+        "browserFirst", "browserVisible", "browserSignIn", "browserAttachUser",
+        "allowLaunchArguments"
+      ];
+      for (const k of boolIds) {
+        const el = document.getElementById("f-" + k);
+        if (el) el.checked = Boolean(c[k]);
+      }
+
+      const valIds = [
+        "indicatorText", "indicatorPosition", "indicatorIdleMs", "stopShortcut",
+        "progressOverlayMode", "progressOverlayOpacity", "progressOverlayWidth",
+        "progressOverlayHeight", "progressOverlayPosition", "progressOverlayX",
+        "progressOverlayY", "progressLockShortcut", "desktopTarget", "hypervVm",
+        "imageMode", "browserApp", "toolPreset", "batchBudgetMs"
+      ];
+      for (const k of valIds) {
+        const el = document.getElementById("f-" + k);
+        if (el && c[k] !== undefined && c[k] !== null) el.value = String(c[k]);
+      }
+      document.getElementById("v-indicatorIdleMs").textContent = String(c.indicatorIdleMs ?? 800);
+      document.getElementById("v-progressOverlayOpacity").textContent = String(c.progressOverlayOpacity ?? 72);
+      document.getElementById("v-batchBudgetMs").textContent = String(Math.round((c.batchBudgetMs || 30000) / 1000));
+
+      toggleCustomPos();
+      toggleHyperv();
+      renderPresets();
+      renderIndicatorTemplates();
+      renderTools();
+      renderPrograms();
+    }
+
+    function readDraftFromForm() {
+      const next = { ...draft };
+      const boolIds = [
+        "indicatorEnabled", "cursorIndicatorEnabled", "remoteIndicatorVisible",
+        "progressOverlayEnabled", "progressOverlayLocked",
+        "browserFirst", "browserVisible", "browserSignIn", "browserAttachUser",
+        "allowLaunchArguments"
+      ];
+      for (const k of boolIds) {
+        const el = document.getElementById("f-" + k);
+        if (el) next[k] = Boolean(el.checked);
+      }
+      next.indicatorText = document.getElementById("f-indicatorText").value.trim() || "苍蓝魔杖正在控制电脑";
+      next.indicatorPosition = document.getElementById("f-indicatorPosition").value;
+      next.indicatorIdleMs = parseInt(document.getElementById("f-indicatorIdleMs").value, 10) || 800;
+      next.stopShortcut = document.getElementById("f-stopShortcut").value.trim();
+      next.progressOverlayMode = document.getElementById("f-progressOverlayMode").value;
+      next.progressOverlayOpacity = parseInt(document.getElementById("f-progressOverlayOpacity").value, 10) || 72;
+      next.progressOverlayWidth = parseInt(document.getElementById("f-progressOverlayWidth").value, 10) || 360;
+      next.progressOverlayHeight = parseInt(document.getElementById("f-progressOverlayHeight").value, 10) || 240;
+      next.progressOverlayPosition = document.getElementById("f-progressOverlayPosition").value;
+      next.progressOverlayX = parseInt(document.getElementById("f-progressOverlayX").value, 10) || 80;
+      next.progressOverlayY = parseInt(document.getElementById("f-progressOverlayY").value, 10) || 80;
+      next.progressLockShortcut = document.getElementById("f-progressLockShortcut").value.trim();
+      next.desktopTarget = document.getElementById("f-desktopTarget").value;
+      next.hypervVm = document.getElementById("f-hypervVm").value.trim();
+      next.imageMode = document.getElementById("f-imageMode").value;
+      next.browserApp = document.getElementById("f-browserApp").value;
+      next.toolPreset = document.getElementById("f-toolPreset").value;
+      next.batchBudgetMs = parseInt(document.getElementById("f-batchBudgetMs").value, 10) || 30000;
+      draft = next;
+    }
+
+    function onFieldChange() {
+      readDraftFromForm();
+      markDirty(true);
+    }
+
+    function renderPresets() {
+      const box = document.getElementById("preset-grid");
+      box.innerHTML = (state.meta.presets || []).map((p) => {
+        const isCurrent =
+          draft.desktopTarget === p.patch.desktopTarget &&
+          draft.toolPreset === p.patch.toolPreset &&
+          Boolean(draft.cursorIndicatorEnabled) === Boolean(p.patch.cursorIndicatorEnabled ?? draft.cursorIndicatorEnabled);
+        return `
+          <div class="preset-card ${isCurrent ? "active" : ""}" onclick="applyPreset('${esc(p.id)}')">
+            <div class="row between">
+              <strong style="font-size:13px;">${esc(p.name)}</strong>
+              <span class="badge ${isCurrent ? "ok" : "neutral"}">${esc(p.badge)}</span>
+            </div>
+            <div class="muted" style="font-size:11.5px;">${esc(p.desc)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderIndicatorTemplates() {
+      const box = document.getElementById("indicator-tpls");
+      box.innerHTML = (state.meta.indicatorTemplates || []).map((t) =>
+        `<span class="chip" onclick="pickIndicatorTpl('${esc(t)}')">${esc(t)}</span>`
+      ).join("");
+    }
+
+    function pickIndicatorTpl(txt) {
+      document.getElementById("f-indicatorText").value = txt;
+      onFieldChange();
+    }
+
+    const GROUP_LABELS = {
+      observe: "👁️ 观察、快照与 OCR",
+      input: "🖱️ 鼠标点击与键盘输入",
+      windows: "🪟 窗口与控件管理",
+      other: "⚡ 批量编排与等待控制"
+    };
+
+    function renderTools() {
+      const selected = new Set(draft.enabledTools || []);
+      const grouped = { observe: [], input: [], windows: [], other: [] };
+      for (const t of state.meta.tools || []) {
+        (grouped[t.group] || grouped.other).push(t);
+      }
+      document.getElementById("tools-sel-count").textContent = `已选 ${selected.size} / ${(state.meta.tools || []).length} 项`;
+      const container = document.getElementById("tools-groups");
+      container.innerHTML = Object.entries(grouped).map(([gKey, list]) => `
+        <div class="stack" style="gap:6px;">
+          <div class="muted" style="font-weight:600;color:var(--text);">${GROUP_LABELS[gKey] || gKey}</div>
+          <div class="tool-grid">
+            ${list.map((t) => {
+              const checked = selected.has(t.name);
+              const tags = [
+                t.readOnly ? '<span class="badge ok">只读</span>' : "",
+                t.backgroundFirst ? '<span class="badge">后台优先</span>' : "",
+                t.lite ? '<span class="badge neutral">常用</span>' : ""
+              ].filter(Boolean).join(" ");
+              return `
+                <label class="tool-item ${checked ? "checked" : ""}">
+                  <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleTool('${esc(t.name)}', this.checked)" />
+                  <div style="min-width:0;flex:1;">
+                    <div class="row between" style="gap:4px;">
+                      <strong style="font-size:12.2px;">${esc(t.label)}</strong>
+                    </div>
+                    <div class="muted" style="font-size:11px;margin:2px 0;"><code>${esc(t.name)}</code> ${tags}</div>
+                    <div class="muted" style="font-size:11px;">${esc(t.desc)}</div>
+                  </div>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function toggleTool(name, checked) {
+      const set = new Set(draft.enabledTools || []);
+      if (checked) set.add(name);
+      else set.delete(name);
+      draft.enabledTools = (state.meta.tools || []).map((t) => t.name).filter((n) => set.has(n));
+      draft.toolPreset = "custom";
+      document.getElementById("f-toolPreset").value = "custom";
+      renderTools();
+      markDirty(true);
+    }
+
+    function onPresetSelectChange() {
+      const val = document.getElementById("f-toolPreset").value;
+      draft.toolPreset = val;
+      if (val === "full") draft.enabledTools = state.meta.tools.map((t) => t.name);
+      else if (val === "lite") draft.enabledTools = state.meta.tools.filter((t) => t.lite).map((t) => t.name);
+      renderTools();
+      markDirty(true);
+    }
+
+    function selectToolsMode(mode) {
+      if (mode === "all") {
+        draft.toolPreset = "full";
+        draft.enabledTools = state.meta.tools.map((t) => t.name);
+      } else if (mode === "lite") {
+        draft.toolPreset = "lite";
+        draft.enabledTools = state.meta.tools.filter((t) => t.lite).map((t) => t.name);
+      } else if (mode === "readonly") {
+        draft.toolPreset = "custom";
+        draft.enabledTools = state.meta.tools.filter((t) => t.readOnly).map((t) => t.name);
+      }
+      document.getElementById("f-toolPreset").value = draft.toolPreset;
+      renderTools();
+      markDirty(true);
+    }
+
+    function renderPrograms() {
+      const box = document.getElementById("prog-list");
+      const list = draft.allowedLaunchPrograms || [];
+      if (!list.length) {
+        box.innerHTML = '<span class="muted">暂无额外白名单程序（仅允许系统基础安全调用）。</span>';
+        return;
+      }
+      box.innerHTML = list.map((p, idx) =>
+        `<span class="prog-tag"><span>${esc(p)}</span><button type="button" onclick="removeProgram(${idx})" title="移除">×</button></span>`
+      ).join("");
+    }
+
+    function addProgram() {
+      const input = document.getElementById("prog-input");
+      const val = input.value.trim();
+      if (!val) return;
+      const list = [...(draft.allowedLaunchPrograms || [])];
+      if (!list.some((x) => x.toLowerCase() === val.toLowerCase())) {
+        list.push(val);
+        draft.allowedLaunchPrograms = list;
+        renderPrograms();
+        markDirty(true);
+      }
+      input.value = "";
+    }
+
+    function removeProgram(idx) {
+      const list = [...(draft.allowedLaunchPrograms || [])];
+      list.splice(idx, 1);
+      draft.allowedLaunchPrograms = list;
+      renderPrograms();
+      markDirty(true);
+    }
+
+    async function applyPreset(presetId) {
+      try {
+        const res = await api("/api/preset", { method: "POST", body: JSON.stringify({ presetId }) });
+        state.config = res.config;
+        draft = structuredClone(res.config);
+        markDirty(false);
+        fillFormFromDraft();
+        showToast("已切换预设并热生效 ✨");
+      } catch (e) {
+        showToast("切换预设失败：" + e.message);
+      }
+    }
+
+    async function saveConfig() {
+      try {
+        readDraftFromForm();
+        const res = await api("/api/config", { method: "POST", body: JSON.stringify(draft) });
+        state.config = res.config;
+        draft = structuredClone(res.config);
+        markDirty(false);
+        fillFormFromDraft();
+        showToast("配置已保存并热生效 ✨");
+      } catch (e) {
+        showToast("保存失败：" + e.message);
+      }
+    }
+
+    function discardChanges() {
+      draft = structuredClone(state.config);
+      markDirty(false);
+      fillFormFromDraft();
+      showToast("已还原未保存的修改");
+    }
+
+    async function resetDefaults() {
+      try {
+        const res = await api("/api/reset", { method: "POST", body: JSON.stringify({}) });
+        state.config = res.config;
+        draft = structuredClone(res.config);
+        markDirty(false);
+        fillFormFromDraft();
+        showToast("已恢复全部默认设置");
+      } catch (e) {
+        showToast("恢复失败：" + e.message);
+      }
+    }
+
+    async function triggerPreview(kind) {
+      try {
+        if (dirty) await saveConfig();
+        await api("/api/preview", { method: "POST", body: JSON.stringify({ kind }) });
+        showToast(kind === "progress" ? "已触发思考与操作浮窗预览（约 3 秒）" : "已触发屏幕边缘光晕与鼠标标签预览（约 3 秒）");
+      } catch (e) {
+        showToast("预览触发失败：" + e.message);
+      }
+    }
+
+    async function runSelfTest() {
+      const btn = document.getElementById("btn-selftest");
+      const box = document.getElementById("selftest-box");
+      btn.disabled = true;
+      box.innerHTML = '<span class="muted">正在运行 PowerShell UIA / OCR / 桌面权限自检...</span>';
+      try {
+        const res = await api("/api/selftest", { method: "POST", body: JSON.stringify({}) });
+        const r = res.report || {};
+        const b = r.backend || {};
+        const sc = r.screenshot || {};
+        const vs = b.virtualScreen ? `${b.virtualScreen.width} × ${b.virtualScreen.height}` : "--";
+        box.innerHTML = `
+          <div class="row" style="gap:6px;margin-bottom:8px;">
+            <span class="badge ${b.ok ? "ok" : "danger"}">后端引擎：${b.ok ? "正常就绪" : "异常"}</span>
+            <span class="badge ${b.uiAutomation ? "ok" : "warn"}">UIA：${b.uiAutomation ? "可用" : "不可用"}</span>
+            <span class="badge ${b.postmessage ? "ok" : "warn"}">后台消息：${b.postmessage ? "支持" : "不支持"}</span>
+            <span class="badge ${sc.ok ? "ok" : "warn"}">截屏：${sc.ok ? `正常 (${Math.round((sc.bytes || 0) / 1024)} KB)` : "锁屏/无交互桌面"}</span>
+          </div>
+          <div class="muted">
+            PowerShell：<code>${esc(b.powershell || "--")}</code> ·
+            虚拟桌面分辨率：<code>${esc(vs)}</code> ·
+            OCR：<code>${esc(b.ocr || "--")}</code> ·
+            注册工具数：<code>${esc(r.tools ?? "--")}</code>
+            ${!sc.ok && sc.error ? `<div style="margin-top:4px;color:var(--warn);">提示：${esc(sc.error)}（若当前屏幕未锁定，可重试）</div>` : ""}
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span style="color:var(--danger);">自检异常：${esc(e.message)}</span>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function loadWindows() {
+      const box = document.getElementById("win-list");
+      box.innerHTML = '<div class="muted">正在扫描桌面可见窗口...</div>';
+      try {
+        const res = await api("/api/windows");
+        const list = res.windows || [];
+        if (!list.length) {
+          box.innerHTML = '<div class="muted">未检测到带标题的可见窗口。</div>';
+          return;
+        }
+        box.innerHTML = list.map((w) => `
+          <div class="win-item">
+            <span class="win-title" title="${esc(w.title)}">${esc(w.title)}</span>
+            <span class="muted"><code>${esc(w.process)}</code> · PID ${esc(w.pid)} · HWND ${esc(w.handle)}</span>
+          </div>
+        `).join("");
+      } catch (e) {
+        box.innerHTML = `<div style="color:var(--danger);">读取失败：${esc(e.message)}</div>`;
+      }
+    }
+
+    async function exportConfig() {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(draft, null, 2));
+        showToast("当前配置 JSON 已复制到剪贴板");
+      } catch {
+        showToast("复制失败，请检查剪贴板权限");
+      }
+    }
+
+    async function init() {
+      try {
+        state = await api("/api/state");
+        draft = structuredClone(state.config);
+        fillFormFromDraft();
+        loadWindows();
+      } catch (e) {
+        showToast("加载状态失败：" + e.message);
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

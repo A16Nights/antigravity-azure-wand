@@ -1,0 +1,13 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "azure-wand",
+  "displayName": "苍蓝魔杖",
+  "version": "1.0.0",
+  "logo": "assets/logo.svg",
+  "description": "苍蓝魔杖（Azure Wand）— Windows 桌面与网页低打扰可视化操控插件：内置 26 项 Windows UIA / OCR / 后台网页 CDP / 批量编排工具，支持独立鼠标指示标签、屏幕边缘光晕提示、可穿透思考浮窗、Esc 硬件级急停与高度可定制的苍蓝侧栏控制台。",
+  "suggestedPrompts": [
+    "打开苍蓝魔杖控制面板并检查当前桌面操控引擎状态",
+    "列出我电脑上当前打开的窗口并读取指定窗口的界面结构",
+    "在低打扰模式下帮我打开并检查一个网页或桌面软件的状态"
+  ]
+}

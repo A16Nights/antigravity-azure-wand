@@ -1,0 +1,19 @@
+{
+  "name": "antigravity-azure-wand",
+  "version": "1.0.0",
+  "description": "Azure Wand (苍蓝魔杖) — Low-disruption Windows desktop & browser visual computer-use plugin with customizable sidecar console for Google Antigravity.",
+  "type": "module",
+  "license": "MIT",
+  "author": "A16Nights",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/A16Nights/antigravity-azure-wand"
+  },
+  "scripts": {
+    "test": "node --test tests/wand.test.mjs",
+    "selftest": "node engine/mcp/server.mjs --self-test"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

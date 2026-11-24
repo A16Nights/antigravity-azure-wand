@@ -1,0 +1,21 @@
+{
+  "command": "node",
+  "args": ["server.mjs"],
+  "restart_policy": "always",
+  "display_name": "苍蓝魔杖",
+  "description": "苍蓝魔杖（Azure Wand）：Windows 桌面与网页低打扰可视化操控面板，支持鼠标标签、屏幕边缘光晕、思考浮窗、工作模式、26 项工具勾选、安全白名单与实时自检预览。",
+  "has_web_ui": true,
+  "agent_permissions": {
+    "allows_user_interactions": true
+  },
+  "ui_config": {
+    "display_name": "苍蓝魔杖",
+    "views": [
+      {
+        "title": "苍蓝魔杖",
+        "path": "/",
+        "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE"
+      }
+    ]
+  }
+}
