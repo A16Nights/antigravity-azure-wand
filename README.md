@@ -174,13 +174,13 @@ git clone https://github.com/A16Nights/antigravity-azure-wand.git "$env:USERPROF
 
 本插件底层引擎基于以下 MIT 开源项目适配与扩展（完整许可声明见 [LICENSE](./LICENSE) 与 [THIRD_PARTY.md](./THIRD_PARTY.md)）：
 - [dsh-computer-use-win](https://github.com/Yu-tao-Li/dsh-computer-use-win)（Windows UIA / OCR / CDP / 接管引擎）
-- [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input)（独立输入通道基础代码架构）
+- [dsh-independent-input](https://github.com/dongcaodeliyu/dsh-independent-input)（独立输入通道基础代码架构）
 
 内置的 5 套动态光标套装来源如下（均来自网络公开免费分享或原创制作，第三方素材版权归原作者所有，仅作开源社区非商业体验配套）：
 - **苍蓝星芒**：苍蓝魔杖内置原创 MIT 动态光标套装。
 - **Gemini · 经典紫晶原版 / Gemini · Plus 醒目符号版**：[nibushiyigeren123-bot/gemini-cursors (v1.3.0)](https://github.com/nibushiyigeren123-bot/gemini-cursors/releases/tag/v1.3.0)
 - **夏日镜华 · 泳装动画套装**：[Bilibili BV1FPbVzFEC3](https://www.bilibili.com/video/BV1FPbVzFEC3/)
-- **DeepSeek · 鲸鱼娘**：来自 [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input)（公开免费素材）
+- **DeepSeek · 鲸鱼娘**：来自 [dsh-independent-input](https://github.com/dongcaodeliyu/dsh-independent-input)（公开免费素材）
 
 <div align="center">
 

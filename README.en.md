@@ -172,13 +172,13 @@ All **9 Azure Suite plugins** share a unified **Neko Glass UI**, synchronized **
 
 The underlying automation and independent input engines are adapted from MIT-licensed upstream projects (see [LICENSE](./LICENSE) and [THIRD_PARTY.md](./THIRD_PARTY.md) for full attribution):
 - [dsh-computer-use-win](https://github.com/Yu-tao-Li/dsh-computer-use-win)
-- [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input)
+- [dsh-independent-input](https://github.com/dongcaodeliyu/dsh-independent-input)
 
 Sources of the 5 bundled animated cursor packs (all freely shared online or original artwork; third-party artwork remains copyright of its respective authors for non-commercial community use):
 - **Azure Starlight**: Original MIT-licensed animated cursor pack created for Azure Wand.
 - **Gemini Original / Gemini Plus**: [nibushiyigeren123-bot/gemini-cursors (v1.3.0)](https://github.com/nibushiyigeren123-bot/gemini-cursors/releases/tag/v1.3.0)
 - **Summer Kyoka (Swimsuit Animated)**: [Bilibili BV1FPbVzFEC3](https://www.bilibili.com/video/BV1FPbVzFEC3/)
-- **DeepSeek Whale Girl**: From [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input) (publicly shared free cursor artwork).
+- **DeepSeek Whale Girl**: From [dsh-independent-input](https://github.com/dongcaodeliyu/dsh-independent-input) (publicly shared free cursor artwork).
 
 <div align="center">
 

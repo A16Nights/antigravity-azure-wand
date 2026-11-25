@@ -25,6 +25,6 @@
 - **夏日镜华 · 泳装动画套装 (`summer-kyoka` · `engine/independent/packs/`)**:
   - Source: Bilibili [BV1FPbVzFEC3](https://www.bilibili.com/video/BV1FPbVzFEC3/) (freely shared online).
 - **DeepSeek · 鲸鱼娘 (`deepseek-whale` · `engine/independent/packs/`)**:
-  - Source: [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input) (publicly shared free cursor artwork).
+  - Source: [dsh-independent-input](https://github.com/dongcaodeliyu/dsh-independent-input) (publicly shared free cursor artwork).
 
 All third-party freely shared cursor artwork remains the property of its respective original creators and is included strictly for non-commercial community experience. Users can also import their own custom cursor packs locally into `~/.gemini/azure-wand/cursor-packs/`.
