@@ -173,11 +173,16 @@
 
     .form-row {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 9px 0;
+      gap: 12px; padding: 9px 10px; margin: 0 -10px;
+      border-radius: 9px;
       border-bottom: 1px solid rgba(143, 155, 184, 0.12);
       flex-wrap: wrap;
+      transition: background 0.16s ease, border-color 0.16s ease;
     }
-    .form-row:last-child { border-bottom: none; padding-bottom: 2px; }
+    .form-row:hover {
+      background: rgba(59, 130, 246, 0.07);
+    }
+    .form-row:last-child { border-bottom: none; padding-bottom: 6px; }
     .form-label { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 190px; }
     .form-label strong { font-size: 12.8px; font-weight: 600; }
 
@@ -231,11 +236,17 @@
     }
     .tool-item {
       display: flex; align-items: flex-start; gap: 8px;
-      padding: 8px 10px; border-radius: 9px;
+      padding: 8px 10px; border-radius: 10px;
       border: 1px solid var(--border); background: var(--panel-2);
-      cursor: pointer; transition: border-color 0.15s;
+      cursor: pointer;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
     }
-    .tool-item:hover { border-color: var(--accent); }
+    .tool-item:hover {
+      border-color: var(--neko-border-hi, var(--accent));
+      background: var(--card-hover, var(--panel-hover));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.16);
+    }
     .tool-item.checked {
       border-color: rgba(56, 189, 248, 0.55);
       background: rgba(56, 189, 248, 0.08);
@@ -245,22 +256,39 @@
     .win-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow: auto; }
     .win-item {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      padding: 7px 10px; border-radius: 8px;
+      padding: 7px 10px; border-radius: 10px;
       background: var(--panel-2); border: 1px solid var(--border);
       font-size: 12px;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .win-item:hover {
+      border-color: var(--neko-border-hi, var(--accent));
+      background: var(--card-hover, var(--panel-hover));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.16);
     }
     .win-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 66%; }
 
     .status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 8px;
+      gap: 10px;
     }
     .stat-box {
-      padding: 10px 12px; border-radius: 10px;
-      background: var(--panel-2); border: 1px solid var(--border);
+      padding: 11px 13px; border-radius: 12px;
+      background: var(--neko-panel, var(--panel-2));
+      border: 1px solid var(--neko-border, var(--border));
+      backdrop-filter: blur(12px);
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
     }
-    .stat-k { font-size: 11px; color: var(--muted); }
+    .stat-box:hover {
+      border-color: var(--neko-border-hi, var(--accent));
+      background: var(--card-hover, var(--panel-hover));
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.18);
+    }
+    .stat-k { font-size: 11px; color: var(--muted); transition: color 0.16s ease; }
+    .stat-box:hover .stat-k { color: var(--neko-text, var(--text)); opacity: 0.85; }
     .stat-v { font-size: 14px; font-weight: 600; margin-top: 2px; }
 
     .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -268,6 +296,13 @@
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 10px; border-radius: 999px;
       background: var(--panel-2); border: 1px solid var(--border); font-size: 12px;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .prog-tag:hover {
+      border-color: var(--neko-border-hi, var(--accent));
+      background: var(--card-hover, var(--panel-hover));
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(59, 130, 246, 0.16);
     }
     .prog-tag button {
       border: none; background: transparent; color: var(--danger);
