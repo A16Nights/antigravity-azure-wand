@@ -21,7 +21,7 @@ test("WandStore config persistence, presets, sanitization, and env builder", () 
 
     const updated = store.updateConfig({
       indicatorText: "苍蓝魔杖测试文案",
-      cursorTagText: "小仓唯",
+      cursorTagText: "星芒助手",
       progressOverlayTheme: "lavender",
       progressOverlayOpacity: 85,
       independentInputEnabled: true,
@@ -31,7 +31,7 @@ test("WandStore config persistence, presets, sanitization, and env builder", () 
       batchBudgetMs: 45000
     });
     assert.equal(updated.indicatorText, "苍蓝魔杖测试文案");
-    assert.equal(updated.cursorTagText, "小仓唯");
+    assert.equal(updated.cursorTagText, "星芒助手");
     assert.equal(updated.progressOverlayTheme, "lavender");
     assert.equal(updated.progressOverlayOpacity, 85);
     assert.equal(updated.independentCursorMode, "clean");
