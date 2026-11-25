@@ -1,0 +1,80 @@
+{
+  "cellSize": 128,
+  "states": {
+    "pointer": {
+      "frames": 20,
+      "intervalMs": 60,
+      "cellSize": 128
+    },
+    "link": {
+      "frames": 12,
+      "intervalMs": 60,
+      "cellSize": 128
+    },
+    "text": {
+      "frames": 16,
+      "intervalMs": 50,
+      "cellSize": 128
+    },
+    "vert": {
+      "frames": 20,
+      "intervalMs": 50,
+      "cellSize": 128
+    },
+    "horz": {
+      "frames": 20,
+      "intervalMs": 50,
+      "cellSize": 128
+    },
+    "move": {
+      "frames": 20,
+      "intervalMs": 50,
+      "cellSize": 128
+    },
+    "dgn1": {
+      "frames": 20,
+      "intervalMs": 50,
+      "cellSize": 128
+    },
+    "dgn2": {
+      "frames": 20,
+      "intervalMs": 50,
+      "cellSize": 128
+    },
+    "cross": {
+      "frames": 20,
+      "intervalMs": 55,
+      "cellSize": 128
+    },
+    "unavailiable": {
+      "frames": 20,
+      "intervalMs": 55,
+      "cellSize": 128
+    },
+    "help": {
+      "frames": 20,
+      "intervalMs": 55,
+      "cellSize": 128
+    },
+    "work": {
+      "frames": 11,
+      "intervalMs": 60,
+      "cellSize": 128
+    },
+    "busy": {
+      "frames": 20,
+      "intervalMs": 45,
+      "cellSize": 128
+    },
+    "handwriting": {
+      "frames": 20,
+      "intervalMs": 55,
+      "cellSize": 128
+    },
+    "alternate": {
+      "frames": 20,
+      "intervalMs": 60,
+      "cellSize": 128
+    }
+  }
+}

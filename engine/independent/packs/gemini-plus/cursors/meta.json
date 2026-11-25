@@ -1,0 +1,125 @@
+{
+  "cellSize": 128,
+  "states": {
+    "pointer": {
+      "frames": 8,
+      "intervalMs": 200,
+      "cellSize": 128,
+      "hotX": 7,
+      "hotY": 7,
+      "matched": true
+    },
+    "link": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 7,
+      "matched": true
+    },
+    "text": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 15,
+      "hotY": 26,
+      "matched": true
+    },
+    "vert": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 13,
+      "hotY": 26,
+      "matched": true
+    },
+    "horz": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 13,
+      "matched": true
+    },
+    "move": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 26,
+      "matched": true
+    },
+    "dgn1": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 26,
+      "matched": true
+    },
+    "dgn2": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 26,
+      "matched": true
+    },
+    "cross": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 26,
+      "matched": true
+    },
+    "unavailiable": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 26,
+      "matched": true
+    },
+    "help": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 7,
+      "hotY": 7,
+      "matched": true
+    },
+    "work": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 6,
+      "hotY": 7,
+      "matched": true
+    },
+    "busy": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 26,
+      "hotY": 26,
+      "matched": true
+    },
+    "handwriting": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 7,
+      "hotY": 45,
+      "matched": true
+    },
+    "alternate": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 23,
+      "hotY": 6,
+      "matched": true
+    }
+  }
+}

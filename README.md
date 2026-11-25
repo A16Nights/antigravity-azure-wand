@@ -68,7 +68,7 @@
 - **随时暂停**：按下 `Ctrl+Alt+Q` 立即暂停独立输入并在光标上切为「禁止」状态。
 
 ### 2. 光标套装画廊、单状态混搭与外部外观导入
-- **内置「苍蓝星芒」套装**：开箱即用的 15 状态 24 帧魔法星芒动态光标。
+- **开箱内置 5 套精选动态光标套装**：包含 **苍蓝星芒**、**夏日镜华 · 泳装动画套装**、**Gemini · 经典紫晶原版**、**Gemini · Plus 醒目符号版**、**DeepSeek · 鲸鱼娘**，无需折腾转换即可在画廊中一键切换。
 - **外部光标一键导入**：纯 Node.js 解码 Windows `.cur` / `.ico`（含 PNG 压缩帧与 32/24/8/4/1bpp DIB + AND Mask）及 RIFF `ACON` `.ani` 动图，支持导入 `install.inf` 整包、逐帧目录、`.zip` / `.rar` 压缩包或零散单文件。
 - **整套切换 + 单状态混搭**：点击画廊卡片即可一键切换整套光标并实时在屏幕上试看；也可以在 15 状态卡片的下拉菜单里，把任意单个状态（如指针、链接、等待、禁止等）指定为另一套光标包的外观。
 
@@ -170,11 +170,17 @@ git clone https://github.com/A16Nights/antigravity-azure-wand.git "$env:USERPROF
 
 ---
 
-## 开源致谢
+## 开源致谢与光标套装来源
 
 本插件底层引擎基于以下 MIT 开源项目适配与扩展（完整许可声明见 [LICENSE](./LICENSE) 与 [THIRD_PARTY.md](./THIRD_PARTY.md)）：
 - [dsh-computer-use-win](https://github.com/Yu-tao-Li/dsh-computer-use-win)（Windows UIA / OCR / CDP / 接管引擎）
-- [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input)（独立输入通道基础代码架构；本仓库未包含其非 MIT 美术资源，内置「苍蓝星芒」光标为全新 MIT 原创生成）
+- [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input)（独立输入通道基础代码架构）
+
+内置的 5 套动态光标套装来源如下（均来自网络公开免费分享或原创制作，第三方素材版权归原作者所有，仅作开源社区非商业体验配套）：
+- **苍蓝星芒**：苍蓝魔杖内置原创 MIT 动态光标套装。
+- **Gemini · 经典紫晶原版 / Gemini · Plus 醒目符号版**：[nibushiyigeren123-bot/gemini-cursors (v1.3.0)](https://github.com/nibushiyigeren123-bot/gemini-cursors/releases/tag/v1.3.0)
+- **夏日镜华 · 泳装动画套装**：[Bilibili BV1FPbVzFEC3](https://www.bilibili.com/video/BV1FPbVzFEC3/)
+- **DeepSeek · 鲸鱼娘**：来自 [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input) 配套光标包，原插件作者说明为：「光标美术（`assets/cursors/`、`assets/previews/`）是第三方公开免费素材」。
 
 <div align="center">
 

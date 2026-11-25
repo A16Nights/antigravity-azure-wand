@@ -68,7 +68,7 @@ Includes 4 Azure glass progress overlay themes and dynamic-width gradient pointe
 - **Instant Pause**: Press `Ctrl+Alt+Q` anytime to pause independent actions.
 
 ### 2. Cursor Pack Gallery, Per-State Mix & External Importer
-- **Built-in Azure Starlight Pack**: Ready-to-use 15-state, 24-frame animated cursor pack under the MIT License.
+- **5 Built-In Animated Cursor Packs**: Ships ready-to-use with **Azure Starlight**, **Summer Kyoka (Swimsuit Animated)**, **Gemini Original**, **Gemini Plus**, and **DeepSeek Whale Girl** for instant one-click switching.
 - **External Cursor Pack Importer**: Pure Node.js decoder for `.cur` / `.ico` (PNG & 32/24/8/4/1bpp DIB + AND masks) and RIFF `ACON` `.ani` animations, supporting `install.inf`, frame-sequence folders, `.zip` / `.rar` archives, and drag-and-drop file uploads.
 - **Suite Switching & State Mixing**: Switch full cursor suites from the visual gallery or override any individual state (e.g. `pointer`, `link`, `work`, `unavailiable`) from another installed pack.
 
@@ -168,11 +168,17 @@ All **9 Azure Suite plugins** share a unified **Neko Glass UI**, synchronized **
 
 ---
 
-## Credits
+## Credits & Cursor Pack Sources
 
 The underlying automation and independent input engines are adapted from MIT-licensed upstream projects (see [LICENSE](./LICENSE) and [THIRD_PARTY.md](./THIRD_PARTY.md) for full attribution):
 - [dsh-computer-use-win](https://github.com/Yu-tao-Li/dsh-computer-use-win)
-- [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input) (code only; all built-in cursor artwork in this repository is newly created under MIT)
+- [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input)
+
+Sources of the 5 bundled animated cursor packs (all freely shared online or original artwork; third-party artwork remains copyright of its respective authors for non-commercial community use):
+- **Azure Starlight**: Original MIT-licensed animated cursor pack created for Azure Wand.
+- **Gemini Original / Gemini Plus**: [nibushiyigeren123-bot/gemini-cursors (v1.3.0)](https://github.com/nibushiyigeren123-bot/gemini-cursors/releases/tag/v1.3.0)
+- **Summer Kyoka (Swimsuit Animated)**: [Bilibili BV1FPbVzFEC3](https://www.bilibili.com/video/BV1FPbVzFEC3/)
+- **DeepSeek Whale Girl**: From [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input), noted by the original plugin author as third-party publicly available free cursor artwork (`"光标美术（assets/cursors/、assets/previews/）是第三方公开免费素材"`).
 
 <div align="center">
 

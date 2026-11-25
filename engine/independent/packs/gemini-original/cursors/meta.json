@@ -1,0 +1,125 @@
+{
+  "cellSize": 128,
+  "states": {
+    "pointer": {
+      "frames": 8,
+      "intervalMs": 200,
+      "cellSize": 128,
+      "hotX": 2,
+      "hotY": 2,
+      "matched": true
+    },
+    "link": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 10,
+      "hotY": 2,
+      "matched": true
+    },
+    "text": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 8,
+      "hotY": 17,
+      "matched": true
+    },
+    "vert": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 7,
+      "hotY": 17,
+      "matched": true
+    },
+    "horz": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 7,
+      "matched": true
+    },
+    "move": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 17,
+      "matched": true
+    },
+    "dgn1": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 17,
+      "matched": true
+    },
+    "dgn2": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 17,
+      "matched": true
+    },
+    "cross": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 17,
+      "matched": true
+    },
+    "unavailiable": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 17,
+      "matched": true
+    },
+    "help": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 2,
+      "hotY": 2,
+      "matched": true
+    },
+    "work": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 2,
+      "hotY": 2,
+      "matched": true
+    },
+    "busy": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 17,
+      "hotY": 17,
+      "matched": true
+    },
+    "handwriting": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 2,
+      "hotY": 32,
+      "matched": true
+    },
+    "alternate": {
+      "frames": 8,
+      "intervalMs": 133,
+      "cellSize": 128,
+      "hotX": 14,
+      "hotY": 2,
+      "matched": true
+    }
+  }
+}
