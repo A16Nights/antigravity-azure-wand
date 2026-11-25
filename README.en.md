@@ -178,7 +178,7 @@ Sources of the 5 bundled animated cursor packs (all freely shared online or orig
 - **Azure Starlight**: Original MIT-licensed animated cursor pack created for Azure Wand.
 - **Gemini Original / Gemini Plus**: [nibushiyigeren123-bot/gemini-cursors (v1.3.0)](https://github.com/nibushiyigeren123-bot/gemini-cursors/releases/tag/v1.3.0)
 - **Summer Kyoka (Swimsuit Animated)**: [Bilibili BV1FPbVzFEC3](https://www.bilibili.com/video/BV1FPbVzFEC3/)
-- **DeepSeek Whale Girl**: From [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input), noted by the original plugin author as third-party publicly available free cursor artwork (`"光标美术（assets/cursors/、assets/previews/）是第三方公开免费素材"`).
+- **DeepSeek Whale Girl**: From [dsh-independent-input](https://github.com/Yu-tao-Li/dsh-independent-input) (publicly shared free cursor artwork).
 
 <div align="center">
 
