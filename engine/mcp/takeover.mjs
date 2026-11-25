@@ -273,7 +273,7 @@ export class TakeoverControl {
         this.persist();
       }
     }
-    const presentation=JSON.stringify([this.config.indicatorEnabled,this.config.cursorIndicatorEnabled,this.config.remoteIndicatorVisible,this.config.indicatorText,this.config.desktopTarget==='fast',this.config.indicatorPosition,this.config.indicatorIdleMs,this.config.stopShortcut,this.locale]);
+    const presentation=JSON.stringify([this.config.indicatorEnabled,this.config.cursorIndicatorEnabled,this.config.cursorTagText,this.config.progressOverlayTheme,this.config.remoteIndicatorVisible,this.config.indicatorText,this.config.desktopTarget==='fast',this.config.indicatorPosition,this.config.indicatorIdleMs,this.config.stopShortcut,this.locale]);
     if (this.child && this.sentPresentation!==presentation) {
       await this.command(((this.seriesHeld&&this.seriesIndicator)||this.shown>0)&&!this.paused&&!this.blockedSeries.has(this.seriesKey)?'begin':'configure', this.config);
       this.sentPresentation=presentation;

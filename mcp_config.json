@@ -6,6 +6,12 @@
         "./mcp-launcher.mjs"
       ]
     },
+    "azure-wand-independent": {
+      "command": "node",
+      "args": [
+        "./mcp-independent.mjs"
+      ]
+    },
     "azure-wand-nav": {
       "command": "node",
       "args": [

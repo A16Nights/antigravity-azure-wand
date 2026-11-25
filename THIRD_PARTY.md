@@ -1,15 +1,21 @@
-# Third-Party Notices & Attributions
+# Third-Party Notices
 
-## dsh-computer-use-win (MIT License)
+## dsh-computer-use-win
 
-The standalone Windows UI Automation, OCR, browser CDP, and visual takeover overlay runtime under `engine/` is adapted from **dsh-computer-use-win** (`v0.6.3`), licensed under the MIT License:
+- **Location**: `engine/` (excluding `engine/independent/`)
+- **Upstream**: `Yu-tao-Li/dsh-computer-use-win` (v0.6.3)
+- **License**: MIT License (see `engine/LICENSE` and `engine/THIRD_PARTY.md`)
+- **Modifications in Azure Wand**:
+  - Removed host-specific adapters (`dsh-plugin.mjs`, `client.js`, host restart/update-guard scripts).
+  - Replaced overlay brand strings and preview texts with Azure Wand / 苍蓝魔杖 localization.
+  - Redesigned native Windows overlay rendering (`windows-takeover.cs` + `wcu-takeover-netfx.dll`) with 4 customizable glass card themes (`azure`, `abyss`, `lavender`, `frost`) and customizable pointer tag text (`cursorTagText`).
 
-- Upstream Repository: https://github.com/Yu-tao-Li/dsh-computer-use-win
-- Copyright (c) 2026 Yu-tao-Li
-- Copyright (c) 2026 cgissing
-- Full upstream license and third-party notices are preserved intact in `engine/LICENSE` and `engine/THIRD_PARTY.md`.
+## dsh-independent-input
 
-### Modifications in Azure Wand (`antigravity-azure-wand`)
-- Removed DSH-host-only adapter/UI files and wrapped the standalone MCP server via `mcp-launcher.mjs` for native Google Antigravity plugin integration.
-- Updated default visual overlay branding strings in `engine/mcp/overlay-strings.mjs` to Azure Wand / 苍蓝魔杖.
-- Added an independent Antigravity Sidecar console (`sidecars/wand/`), unified configuration store (`lib/wand-store.mjs`), and left-sidebar MCP App navigation (`mcp-nav.mjs`).
+- **Location**: `engine/independent/sidecar.ps1` (source code adapted)
+- **Upstream**: `dsh-independent-input` (v0.2.0), Copyright (c) 2026 冬草里的鱼
+- **License**: MIT License (source code only)
+- **Cursor Artwork Notice**:
+  - No third-party cursor artwork from upstream is bundled in this repository.
+  - All 15-state animated cursor sprites and preview thumbnails under `engine/independent/assets/` (`Azure Starlight`) are 100% original procedural artwork created for Azure Wand and licensed under MIT.
+  - Users may optionally place their own third-party cursor packs locally in `~/.gemini/azure-wand/cursor-packs/<pack-name>/` for personal use.

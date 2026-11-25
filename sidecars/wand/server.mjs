@@ -218,6 +218,41 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 200, result);
         return;
       }
+      if (req.method === "GET" && pathname.startsWith("/api/cursor-preview/")) {
+        const stateId = decodeURIComponent(pathname.slice("/api/cursor-preview/".length)).replace(/[^a-z0-9_-]/gi, "");
+        const filePath = store.resolveCursorPreviewPath(stateId);
+        if (!filePath || !fs.existsSync(filePath)) {
+          res.writeHead(404);
+          res.end();
+          return;
+        }
+        res.writeHead(200, {
+          "Content-Type": "image/png",
+          "Cache-Control": "no-store"
+        });
+        fs.createReadStream(filePath).pipe(res);
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/independent/test") {
+        const body = await readBody(req);
+        const result = await store.previewIndependentCursor({
+          state: String(body.state || "pointer"),
+          x: body.x,
+          y: body.y
+        });
+        sendJson(res, 200, result);
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/independent/hide") {
+        const result = await store.hideIndependentCursor();
+        sendJson(res, 200, result);
+        return;
+      }
+      if (req.method === "GET" && pathname === "/api/independent/status") {
+        const result = await store.getIndependentStatus();
+        sendJson(res, 200, result);
+        return;
+      }
 
       sendJson(res, 404, { ok: false, error: "Not found" });
     } catch (err) {

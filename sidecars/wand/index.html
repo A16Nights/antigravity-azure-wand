@@ -287,6 +287,60 @@
       background: var(--panel-2); padding: 1px 5px; border-radius: 5px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px;
     }
+    .theme-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 9px;
+    }
+    .theme-card {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px; cursor: pointer; transition: all 0.16s ease;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .theme-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .theme-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(99, 102, 241, 0.14));
+    }
+    .theme-swatch {
+      height: 18px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.16);
+      position: relative; overflow: hidden;
+    }
+    .theme-swatch-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+    .cursor-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;
+    }
+    .cursor-state-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.12s;
+    }
+    .cursor-state-item:hover { border-color: var(--accent); background: var(--panel-hover); transform: translateY(-1px); }
+    .cursor-state-item img {
+      width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated;
+      background: rgba(10, 15, 29, 0.55); border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 7px; padding: 2px; flex-shrink: 0;
+    }
+    .seg-group { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .seg-btn {
+      border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+      padding: 7px 13px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.15s;
+    }
+    .seg-btn:hover { border-color: var(--accent); }
+    .seg-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent; color: #fff; font-weight: 600;
+    }
+    .master-btn {
+      border: none; border-radius: 9px; padding: 8px 16px; cursor: pointer;
+      font-weight: 600; font-size: 13px; transition: all 0.15s;
+    }
+    .master-btn.on {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9); color: #061322;
+      box-shadow: 0 3px 14px rgba(56, 189, 248, 0.32);
+    }
+    .master-btn.off {
+      background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -311,7 +365,8 @@
 
   <nav class="tabs-bar">
     <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">✦ 概览与快控</button>
-    <button class="tab-btn" data-tab="visual" onclick="switchTab('visual')">🖱️ 鼠标与浮窗定制</button>
+    <button class="tab-btn" data-tab="independent" onclick="switchTab('independent')">🪄 独立输入 · AI 光标</button>
+    <button class="tab-btn" data-tab="visual" onclick="switchTab('visual')">🎨 浮窗与标签定制</button>
     <button class="tab-btn" data-tab="channel" onclick="switchTab('channel')">🌐 桌面与浏览器</button>
     <button class="tab-btn" data-tab="tools" onclick="switchTab('tools')">🧰 26 项工具箱</button>
     <button class="tab-btn" data-tab="security" onclick="switchTab('security')">🛡️ 安全与白名单</button>
@@ -322,9 +377,9 @@
     <section id="tab-overview" class="view stack">
       <div class="status-grid" id="status-grid">
         <div class="stat-box"><div class="stat-k">工作模式</div><div class="stat-v" id="st-mode">--</div></div>
+        <div class="stat-box"><div class="stat-k">独立 AI 光标</div><div class="stat-v" id="st-independent">--</div></div>
         <div class="stat-box"><div class="stat-k">已启用工具</div><div class="stat-v" id="st-tools">--</div></div>
-        <div class="stat-box"><div class="stat-k">鼠标指示与光晕</div><div class="stat-v" id="st-indicator">--</div></div>
-        <div class="stat-box"><div class="stat-k">思考操作浮窗</div><div class="stat-v" id="st-overlay">--</div></div>
+        <div class="stat-box"><div class="stat-k">浮窗风格与标签</div><div class="stat-v" id="st-overlay">--</div></div>
       </div>
 
       <div class="card stack">
@@ -361,21 +416,101 @@
       </div>
     </section>
 
-    <!-- TAB 2: 鼠标与浮窗定制 -->
+    <!-- TAB 2: 独立输入 · AI 光标 -->
+    <section id="tab-independent" class="view stack hidden">
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🪄 独立输入 · AI 光标</div>
+            <div class="muted">调教独立 AI 光标的显示方式、大小与主题包；严格走目标窗口 UIA / 窗口消息，绝不移动你的真实鼠标、不抢键盘焦点，随时按 <code>Ctrl+Alt+Q</code> 暂停。</div>
+          </div>
+          <div class="row">
+            <button class="btn sm primary" onclick="testIndependentCursor('pointer')">✨ 在屏幕上试一下</button>
+            <button class="btn sm" onclick="hideIndependentCursor()">🙈 收起光标</button>
+          </div>
+        </div>
+
+        <div class="card" style="background:var(--panel-2);padding:12px;">
+          <div class="row between">
+            <div class="form-label">
+              <strong>总开关</strong>
+              <span class="muted" id="ind-master-desc">已启用：所有独立输入只用 AI 光标（UIA / 窗口消息），严格禁止动用真实鼠标。</span>
+            </div>
+            <button class="master-btn on" id="btn-ind-master" onclick="toggleIndependentMaster()">已启用（点此关闭）</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>显示方式</strong>
+            <span class="muted">陪伴 = 一直显示到收工；整洁 = 每次动作后约 <span id="v-indHoldMsInline">2600</span>ms 自动收起</span>
+          </div>
+          <div class="seg-group">
+            <button class="seg-btn" id="btn-mode-companion" onclick="setIndependentMode('companion')">陪伴（一直显示）</button>
+            <button class="seg-btn" id="btn-mode-clean" onclick="setIndependentMode('clean')">整洁（动作后收起）</button>
+          </div>
+        </div>
+
+        <div class="form-row" id="row-ind-hold">
+          <div class="form-label">
+            <strong>整洁模式收起延时：<span id="v-independentCursorHoldMs">2600</span> ms</strong>
+            <span class="muted">动作完成后光标继续停留的毫秒数（400~15000 ms）</span>
+          </div>
+          <input type="range" id="f-independentCursorHoldMs" min="400" max="15000" step="100" style="width:200px;" oninput="document.getElementById('v-independentCursorHoldMs').textContent=this.value;document.getElementById('v-indHoldMsInline').textContent=this.value;onFieldChange()" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>AI 光标大小：<span id="v-independentCursorSize">64</span> px</strong>
+            <span class="muted">调整置顶穿透 AI 光标的边长像素（24~192 px，默认 64 px）</span>
+          </div>
+          <input type="range" id="f-independentCursorSize" min="24" max="192" step="4" style="width:200px;" oninput="document.getElementById('v-independentCursorSize').textContent=this.value;onFieldChange()" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>光标主题包（支持本地自定义 15 状态动态包）</strong>
+            <span class="muted">本地光标包可放进 <code id="packs-dir">--</code>，切换后下方 15 状态预览与屏幕光标同步生效</span>
+          </div>
+          <select id="f-independentCursorPack" onchange="onCursorPackChange()" style="min-width:220px;"></select>
+        </div>
+
+        <div class="form-row" id="row-custom-pack" style="display:none;">
+          <div class="form-label">
+            <strong>自定义光标包目录路径</strong>
+            <span class="muted">目录下需包含 <code>pointer.png</code> 等 15 状态 512×192 精灵图（或 <code>cursors/</code> 子目录）</span>
+          </div>
+          <input type="text" id="f-independentCustomCursorDir" placeholder="例如 D:\MyCursors\pack" style="width:280px;max-width:100%;" oninput="onFieldChange()" />
+        </div>
+      </div>
+
+      <div class="card stack">
+        <div class="row between">
+          <div>
+            <div class="card-title">🎭 光标状态（15 状态自动切换）</div>
+            <div class="muted">这些是同一只 AI 光标的 15 个状态，执行任务时按操作自动切换；点击任意卡片可直接在屏幕上预览该状态的动态效果。</div>
+          </div>
+          <button class="btn sm" onclick="resetIndependentDefaults()">↺ 恢复默认（陪伴·64px）</button>
+        </div>
+        <div class="cursor-grid" id="cursor-states-grid"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 浮窗与标签定制 -->
     <section id="tab-visual" class="view stack hidden">
       <div class="card stack">
         <div class="row between">
           <div>
-            <div class="card-title">🖱️ 独立鼠标指示与屏幕接管提示</div>
-            <div class="muted">网页通道默认后台蓝箭头零打扰；桌面坐标操控借用鼠标时展示屏幕光晕与标签，随时按 Esc 急停。</div>
+            <div class="card-title">🖱️ 控制时鼠标标签与屏幕边缘光晕</div>
+            <div class="muted">网页通道默认后台蓝箭头零打扰；桌面坐标操控短暂借用鼠标时展示苍蓝光晕与自定义鼠标标签，随时按 Esc 急停。</div>
           </div>
-          <button class="btn sm primary" onclick="triggerPreview('indicator')">✨ 立即预览</button>
+          <button class="btn sm primary" onclick="triggerPreview('indicator')">✨ 立即预览光晕与标签</button>
         </div>
 
         <div class="form-row">
           <div class="form-label">
             <strong>开启屏幕边缘光晕与横幅提示</strong>
-            <span class="muted">桌面操控借用鼠标键盘时点亮屏幕边缘并显示提示条</span>
+            <span class="muted">桌面操控借用鼠标键盘时点亮屏幕边缘并显示苍蓝玻璃提示条</span>
           </div>
           <label class="switch"><input type="checkbox" id="f-indicatorEnabled" onchange="onFieldChange()" /><span class="slider"></span></label>
         </div>
@@ -383,9 +518,18 @@
         <div class="form-row">
           <div class="form-label">
             <strong>开启鼠标旁独立指示标签</strong>
-            <span class="muted">指针附近跟随显示小型操控徽章，清楚知道魔杖此刻在点哪里</span>
+            <span class="muted">指针附近跟随显示苍蓝渐变小徽章，清楚知道魔杖此刻在点哪里</span>
           </div>
           <label class="switch"><input type="checkbox" id="f-cursorIndicatorEnabled" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">
+            <strong>控制时鼠标提示标签文字</strong>
+            <span class="muted">鼠标旁胶囊徽章显示的短文字（最多 18 字，不再硬编码 DSH）</span>
+            <div class="row" id="cursor-tag-tpls" style="margin-top:5px;"></div>
+          </div>
+          <input type="text" id="f-cursorTagText" maxlength="18" style="width:200px;" oninput="onFieldChange()" />
         </div>
 
         <div class="form-row">
@@ -445,9 +589,17 @@
         <div class="form-row">
           <div class="form-label">
             <strong>启用思考与操作浮窗</strong>
-            <span class="muted">操控期间自动浮出步骤与状态卡片</span>
+            <span class="muted">操控期间自动浮出苍蓝玻璃步骤与状态卡片</span>
           </div>
           <label class="switch"><input type="checkbox" id="f-progressOverlayEnabled" onchange="onFieldChange()" /><span class="slider"></span></label>
+        </div>
+
+        <div class="stack" style="gap:7px;padding:8px 0;border-bottom:1px solid rgba(143,155,184,0.12);">
+          <div class="form-label">
+            <strong>浮窗与光晕卡片风格</strong>
+            <span class="muted">四套苍蓝系玻璃卡片风格，同步作用于思考浮窗、鼠标标签胶囊与屏幕光晕</span>
+          </div>
+          <div class="theme-grid" id="overlay-theme-grid"></div>
         </div>
 
         <div class="form-row">
@@ -734,15 +886,20 @@
 
     function fillFormFromDraft() {
       const c = draft;
-      document.getElementById("ver-badge").textContent = "v" + (state.version || "1.0.0");
+      document.getElementById("ver-badge").textContent = "v" + (state.version || "1.1.0");
       const modeText = c.desktopTarget === "fast" ? "极速前台" : c.desktopTarget === "hyperv" ? "Hyper-V 隔离" : "静默低打扰";
       document.getElementById("mode-badge").textContent = modeText;
       document.getElementById("st-mode").textContent = modeText;
+      const packInfo = (state.meta.cursorPacks || []).find((p) => p.id === c.independentCursorPack);
+      document.getElementById("st-independent").textContent = c.independentInputEnabled
+        ? `${c.independentCursorMode === "clean" ? "整洁" : "陪伴"} · ${c.independentCursorSize || 64}px`
+        : "已停用";
       const toolCnt = c.toolPreset === "lite" ? state.meta.toolCounts.lite : c.toolPreset === "lazy" ? "懒加载" : (c.enabledTools || []).length;
       document.getElementById("st-tools").textContent = typeof toolCnt === "number" ? `${toolCnt} / ${state.meta.toolCounts.all}` : toolCnt;
-      document.getElementById("st-indicator").textContent = c.indicatorEnabled ? (c.cursorIndicatorEnabled ? "光晕 + 鼠标标签" : "仅屏幕光晕") : "已关闭";
-      document.getElementById("st-overlay").textContent = c.progressOverlayEnabled ? `${c.progressOverlayPosition} · ${c.progressOverlayOpacity}%` : "已关闭";
+      const themeInfo = (state.meta.overlayThemes || []).find((t) => t.id === c.progressOverlayTheme);
+      document.getElementById("st-overlay").textContent = `${themeInfo ? themeInfo.name : "苍蓝玻璃"} · ${c.cursorTagText || "苍蓝魔杖"}`;
       document.getElementById("cfg-path").textContent = state.meta.configPath || "--";
+      document.getElementById("packs-dir").textContent = state.meta.cursorPacksDir || "--";
 
       const boolIds = [
         "indicatorEnabled", "cursorIndicatorEnabled", "remoteIndicatorVisible",
@@ -756,24 +913,31 @@
       }
 
       const valIds = [
-        "indicatorText", "indicatorPosition", "indicatorIdleMs", "stopShortcut",
+        "indicatorText", "cursorTagText", "indicatorPosition", "indicatorIdleMs", "stopShortcut",
         "progressOverlayMode", "progressOverlayOpacity", "progressOverlayWidth",
         "progressOverlayHeight", "progressOverlayPosition", "progressOverlayX",
         "progressOverlayY", "progressLockShortcut", "desktopTarget", "hypervVm",
-        "imageMode", "browserApp", "toolPreset", "batchBudgetMs"
+        "imageMode", "browserApp", "toolPreset", "batchBudgetMs",
+        "independentCursorHoldMs", "independentCursorSize", "independentCustomCursorDir"
       ];
       for (const k of valIds) {
         const el = document.getElementById("f-" + k);
         if (el && c[k] !== undefined && c[k] !== null) el.value = String(c[k]);
       }
       document.getElementById("v-indicatorIdleMs").textContent = String(c.indicatorIdleMs ?? 800);
-      document.getElementById("v-progressOverlayOpacity").textContent = String(c.progressOverlayOpacity ?? 72);
+      document.getElementById("v-progressOverlayOpacity").textContent = String(c.progressOverlayOpacity ?? 78);
       document.getElementById("v-batchBudgetMs").textContent = String(Math.round((c.batchBudgetMs || 30000) / 1000));
+      document.getElementById("v-independentCursorHoldMs").textContent = String(c.independentCursorHoldMs ?? 2600);
+      document.getElementById("v-indHoldMsInline").textContent = String(c.independentCursorHoldMs ?? 2600);
+      document.getElementById("v-independentCursorSize").textContent = String(c.independentCursorSize ?? 64);
 
+      renderIndependentControls();
       toggleCustomPos();
       toggleHyperv();
       renderPresets();
       renderIndicatorTemplates();
+      renderCursorTagTemplates();
+      renderOverlayThemes();
       renderTools();
       renderPrograms();
     }
@@ -791,11 +955,12 @@
         if (el) next[k] = Boolean(el.checked);
       }
       next.indicatorText = document.getElementById("f-indicatorText").value.trim() || "苍蓝魔杖正在控制电脑";
+      next.cursorTagText = document.getElementById("f-cursorTagText").value.trim() || "苍蓝魔杖";
       next.indicatorPosition = document.getElementById("f-indicatorPosition").value;
       next.indicatorIdleMs = parseInt(document.getElementById("f-indicatorIdleMs").value, 10) || 800;
       next.stopShortcut = document.getElementById("f-stopShortcut").value.trim();
       next.progressOverlayMode = document.getElementById("f-progressOverlayMode").value;
-      next.progressOverlayOpacity = parseInt(document.getElementById("f-progressOverlayOpacity").value, 10) || 72;
+      next.progressOverlayOpacity = parseInt(document.getElementById("f-progressOverlayOpacity").value, 10) || 78;
       next.progressOverlayWidth = parseInt(document.getElementById("f-progressOverlayWidth").value, 10) || 360;
       next.progressOverlayHeight = parseInt(document.getElementById("f-progressOverlayHeight").value, 10) || 240;
       next.progressOverlayPosition = document.getElementById("f-progressOverlayPosition").value;
@@ -808,6 +973,10 @@
       next.browserApp = document.getElementById("f-browserApp").value;
       next.toolPreset = document.getElementById("f-toolPreset").value;
       next.batchBudgetMs = parseInt(document.getElementById("f-batchBudgetMs").value, 10) || 30000;
+      next.independentCursorHoldMs = parseInt(document.getElementById("f-independentCursorHoldMs").value, 10) || 2600;
+      next.independentCursorSize = parseInt(document.getElementById("f-independentCursorSize").value, 10) || 64;
+      next.independentCursorPack = document.getElementById("f-independentCursorPack").value || "builtin";
+      next.independentCustomCursorDir = document.getElementById("f-independentCustomCursorDir").value.trim();
       draft = next;
     }
 
@@ -845,6 +1014,144 @@
     function pickIndicatorTpl(txt) {
       document.getElementById("f-indicatorText").value = txt;
       onFieldChange();
+    }
+
+    function renderCursorTagTemplates() {
+      const box = document.getElementById("cursor-tag-tpls");
+      if (!box) return;
+      box.innerHTML = (state.meta.cursorTagTemplates || []).map((t) =>
+        `<span class="chip" onclick="pickCursorTag('${esc(t)}')">${esc(t)}</span>`
+      ).join("");
+    }
+
+    function pickCursorTag(txt) {
+      document.getElementById("f-cursorTagText").value = txt;
+      onFieldChange();
+    }
+
+    function renderOverlayThemes() {
+      const box = document.getElementById("overlay-theme-grid");
+      if (!box) return;
+      const cur = draft.progressOverlayTheme || "azure";
+      box.innerHTML = (state.meta.overlayThemes || []).map((t) => `
+        <div class="theme-card ${cur === t.id ? "active" : ""}" onclick="pickOverlayTheme('${esc(t.id)}')">
+          <div class="theme-swatch" style="background:${esc(t.bg)};">
+            <div class="theme-swatch-bar" style="background:linear-gradient(90deg, ${esc(t.accent)}, ${esc(t.accent2)});"></div>
+          </div>
+          <div class="row between">
+            <strong style="font-size:12.5px;">${esc(t.name)}</strong>
+            <span class="badge ${cur === t.id ? "ok" : "neutral"}">${esc(t.badge)}</span>
+          </div>
+          <div class="muted" style="font-size:11px;">${esc(t.desc)}</div>
+        </div>
+      `).join("");
+    }
+
+    function pickOverlayTheme(themeId) {
+      draft.progressOverlayTheme = themeId;
+      renderOverlayThemes();
+      markDirty(true);
+    }
+
+    function renderIndependentControls() {
+      const on = draft.independentInputEnabled !== false;
+      const btn = document.getElementById("btn-ind-master");
+      const desc = document.getElementById("ind-master-desc");
+      if (btn) {
+        btn.className = "master-btn " + (on ? "on" : "off");
+        btn.textContent = on ? "已启用（点此关闭）" : "已停用（点此开启）";
+      }
+      if (desc) {
+        desc.textContent = on
+          ? "已启用：所有独立输入只用 AI 光标（UIA / 窗口消息），严格禁止动用真实鼠标与抢焦点。"
+          : "已停用：独立输入工具已锁定不执行动作，仅保留常规观测与手动确认通道。";
+      }
+      const mode = draft.independentCursorMode === "clean" ? "clean" : "companion";
+      document.getElementById("btn-mode-companion")?.classList.toggle("active", mode === "companion");
+      document.getElementById("btn-mode-clean")?.classList.toggle("active", mode === "clean");
+      const holdRow = document.getElementById("row-ind-hold");
+      if (holdRow) holdRow.style.display = mode === "clean" ? "flex" : "none";
+
+      const sel = document.getElementById("f-independentCursorPack");
+      if (sel) {
+        const packs = state.meta.cursorPacks || [];
+        sel.innerHTML = [
+          ...packs.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`),
+          '<option value="custom">自定义本地目录…</option>'
+        ].join("");
+        sel.value = draft.independentCursorPack || "builtin";
+        if (!sel.value && packs[0]) sel.value = packs[0].id;
+      }
+      const customRow = document.getElementById("row-custom-pack");
+      if (customRow) customRow.style.display = draft.independentCursorPack === "custom" ? "flex" : "none";
+
+      renderCursorStatesGrid();
+    }
+
+    function renderCursorStatesGrid() {
+      const box = document.getElementById("cursor-states-grid");
+      if (!box) return;
+      const packKey = encodeURIComponent(draft.independentCursorPack || "builtin");
+      const tq = TOKEN ? `&token=${encodeURIComponent(TOKEN)}` : "";
+      box.innerHTML = (state.meta.cursorStates || []).map((s) => `
+        <div class="cursor-state-item" onclick="testIndependentCursor('${esc(s.id)}')" title="点击在屏幕上预览「${esc(s.name)}」状态">
+          <img src="/api/cursor-preview/${esc(s.id)}?pack=${packKey}${tq}&v=${Date.now()}" alt="${esc(s.name)}" />
+          <div style="min-width:0;flex:1;">
+            <div style="font-weight:600;font-size:12.5px;">${esc(s.name)} <span class="muted" style="font-weight:400;font-size:11px;">${esc(s.id)}</span></div>
+            <div class="muted" style="font-size:11px;">${esc(s.desc)}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function toggleIndependentMaster() {
+      draft.independentInputEnabled = !(draft.independentInputEnabled !== false);
+      renderIndependentControls();
+      await saveConfig();
+    }
+
+    function setIndependentMode(mode) {
+      draft.independentCursorMode = mode === "clean" ? "clean" : "companion";
+      renderIndependentControls();
+      markDirty(true);
+    }
+
+    async function onCursorPackChange() {
+      draft.independentCursorPack = document.getElementById("f-independentCursorPack").value;
+      renderIndependentControls();
+      if (draft.independentCursorPack !== "custom") {
+        await saveConfig();
+      } else {
+        markDirty(true);
+      }
+    }
+
+    async function testIndependentCursor(stateId = "pointer") {
+      try {
+        if (dirty) await saveConfig();
+        await api("/api/independent/test", { method: "POST", body: JSON.stringify({ state: stateId }) });
+        showToast(`✨ 已在屏幕上展示 AI 光标（${stateId}）`);
+      } catch (e) {
+        showToast("预览 AI 光标失败：" + e.message);
+      }
+    }
+
+    async function hideIndependentCursor() {
+      try {
+        await api("/api/independent/hide", { method: "POST", body: JSON.stringify({}) });
+        showToast("已收起 AI 光标");
+      } catch (e) {
+        showToast("收起失败：" + e.message);
+      }
+    }
+
+    async function resetIndependentDefaults() {
+      draft.independentInputEnabled = true;
+      draft.independentCursorMode = "companion";
+      draft.independentCursorHoldMs = 2600;
+      draft.independentCursorSize = 64;
+      await saveConfig();
+      showToast("已恢复独立输入默认设置（陪伴 · 64px · 2600ms）");
     }
 
     const GROUP_LABELS = {

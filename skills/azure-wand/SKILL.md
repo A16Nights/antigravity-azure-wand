@@ -1,21 +1,16 @@
 ---
 name: azure-wand
-description: 苍蓝魔杖（Azure Wand）— Windows 桌面与网页低打扰可视化操控插件：提供 26 项 Windows UIA / OCR / 后台网页 CDP / 批量编排工具，支持独立鼠标指示标签、屏幕边缘光晕、可穿透思考浮窗、Esc 急停与高度可定制的苍蓝侧栏控制台。当用户需要查看或操控 Windows 桌面软件、识别屏幕文字、后台操作网页或打开苍蓝魔杖控制面板时使用。
+description: 苍蓝魔杖（Azure Wand）— Windows 桌面与网页低打扰可视化操控插件：提供 26 项 Windows UIA / OCR / 后台网页 CDP 工具 + 独立输入 15 状态动态 AI 光标（strict 不动真实鼠标、不抢焦点），支持 4 套苍蓝玻璃思考浮窗、自定义鼠标标签、Esc / Ctrl+Alt+Q 急停与高度可定制的苍蓝侧栏控制台。当用户需要查看或操控 Windows 桌面软件、识别屏幕文字、后台操作网页、调教独立 AI 光标或打开苍蓝魔杖控制面板时使用。
 ---
 
 # 苍蓝魔杖（Azure Wand）
 
-## 核心工具与入口
+## 核心通道选择指南
 
-- **控制面板**：调用 `open_azure_wand_ui` 或引导点击左侧栏/右侧栏的「苍蓝魔杖」面板，可可视化调节：
-  - 一键场景预设（静默陪伴 / 极速前台托管 / 只读观测哨兵 / 精简 12 工具）
-  - 独立鼠标标签、屏幕边缘光晕横幅文案、停靠位置、隐藏延时与自定义急停快捷键
-  - 思考与操作浮窗的不透明度、宽高、位置、鼠标穿透锁定
-  - 后台网页通道（CDP 虚拟蓝箭头）、工具箱 26 项逐个开关、安全启动程序白名单与实时自检
-- **桌面操控 MCP（`azure-wand`）**：内置 26 项 Windows 操控工具（`list_windows`、`snapshot`、`find`、`ocr`、`screenshot`、`click`、`type_text`、`invoke`、`set_value`、`batch`、`wait_for` 等）。
-
-## 推荐操作循环
-
-1. **先观察**：优先调用 `list_windows`、`snapshot`、`find` 或 `ocr` 摸清界面，不盲点坐标。
-2. **低打扰执行**：优先使用 `invoke` / `set_value` / 后台元素 `click` 或网页通道（零抢鼠标）；多步确定动作合并进 `batch`。
-3. **验证与尊重急停**：执行后用 `wait_for` 或 `snapshot` 核实结果；若返回 `COMPUTER_USE_STOPPED_BY_USER`（用户按下 `Esc`），立即停手并汇报，不要自动重试。
+1. **完全不抢鼠标与焦点 + 独立 15 状态 AI 光标（`independent_input`）**：
+   - 先调 `independent_input({ action: "status" })` 确认未暂停（`Ctrl+Alt+Q` 全局急停），再 `windows` 获取目标 `hwnd`，随后用 `click` / `type` / `key` / `scroll` / `drag` 向该 `hwnd` 投递 UIA / 窗口消息。
+   - 严格禁止动用真实鼠标与抢焦点；AI 光标在屏幕置顶穿透显示并按操作在 15 个状态间自动切换。
+2. **26 项综合桌面与网页操控工具（`windows_computer_use_*`）**：
+   - 网页任务优先走内置后台 CDP 通道；桌面任务优先走 `snapshot` / `find` / `invoke` / `set_value`；需要坐标点击自绘界面时由低打扰模式短暂借用并展示苍蓝边缘光晕、自定义鼠标标签与苍蓝玻璃思考浮窗，按 `Esc` 立即停止。
+3. **打开控制面板**：
+   - 引导用户点击 `[苍蓝魔杖](sidecar://azure-wand/wand/)` 或调用 `open_azure_wand_ui`，可在侧栏配置独立 AI 光标（总开关、陪伴/整洁模式、大小、光标主题包、15 状态实时点击预览）、浮窗 4 套玻璃主题、自定义鼠标标签、26 项工具开关与白名单。

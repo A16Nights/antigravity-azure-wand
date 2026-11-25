@@ -21,13 +21,23 @@ test("WandStore config persistence, presets, sanitization, and env builder", () 
 
     const updated = store.updateConfig({
       indicatorText: "苍蓝魔杖测试文案",
+      cursorTagText: "小仓唯",
+      progressOverlayTheme: "lavender",
       progressOverlayOpacity: 85,
+      independentInputEnabled: true,
+      independentCursorMode: "clean",
+      independentCursorSize: 80,
       allowedLaunchPrograms: ["notepad.exe", "MuMuPlayer.exe", "notepad.exe"],
       batchBudgetMs: 45000
     });
     assert.equal(updated.indicatorText, "苍蓝魔杖测试文案");
+    assert.equal(updated.cursorTagText, "小仓唯");
+    assert.equal(updated.progressOverlayTheme, "lavender");
     assert.equal(updated.progressOverlayOpacity, 85);
+    assert.equal(updated.independentCursorMode, "clean");
+    assert.equal(updated.independentCursorSize, 80);
     assert.deepEqual(updated.allowedLaunchPrograms, ["notepad.exe", "MuMuPlayer.exe"]);
+    assert.ok(fs.existsSync(store.resolveCursorPreviewPath("pointer", updated)));
 
     const env = store.buildEngineEnv(updated);
     assert.equal(env.WCU_CONFIG_FILE, store.configPath);
@@ -161,13 +171,54 @@ test("Sidecar HTTP server enforces auth token and serves state/config endpoints"
     const saveRes = await fetch(`${base}/api/config`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-sidecar-token": token },
-      body: JSON.stringify({ indicatorText: "端到端验证通过", progressOverlayOpacity: 80 })
+      body: JSON.stringify({
+        indicatorText: "端到端验证通过",
+        cursorTagText: "苍蓝魔杖",
+        progressOverlayTheme: "azure",
+        progressOverlayOpacity: 80
+      })
     }).then((r) => r.json());
     assert.equal(saveRes.ok, true);
     assert.equal(saveRes.config.indicatorText, "端到端验证通过");
+    assert.equal(saveRes.config.cursorTagText, "苍蓝魔杖");
+    assert.equal(saveRes.config.progressOverlayTheme, "azure");
     assert.equal(saveRes.config.progressOverlayOpacity, 80);
+
+    const previewPng = await fetch(`${base}/api/cursor-preview/pointer?token=${encodeURIComponent(token)}`);
+    assert.equal(previewPng.status, 200);
+    assert.equal(previewPng.headers.get("content-type"), "image/png");
+    const pngBytes = new Uint8Array(await previewPng.arrayBuffer());
+    assert.ok(pngBytes.length > 100);
   } finally {
     try { child.kill(); } catch {}
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test("MCP independent server exposes independent_input tool and honors master switch", () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "azure-wand-ind-"));
+  try {
+    const store = new WandStore(tmpDir);
+    store.writeConfig({ independentInputEnabled: false });
+    const input = [
+      JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2024-11-05" } }),
+      JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }),
+      JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "independent_input", arguments: { action: "click", hwnd: 1, x: 10, y: 10 } } })
+    ].join("\n") + "\n";
+
+    const out = spawnSync(process.execPath, [path.join(ROOT_DIR, "mcp-independent.mjs")], {
+      input,
+      encoding: "utf8",
+      env: { ...process.env, AZURE_WAND_DATA_DIR: tmpDir },
+      timeout: 10000
+    });
+    assert.equal(out.status, 0, out.stderr);
+    const msgs = out.stdout.trim().split(/\r?\n/).map((l) => JSON.parse(l));
+    assert.equal(msgs[0].result.serverInfo.name, "azure-wand-independent");
+    assert.ok(msgs[1].result.tools.some((t) => t.name === "independent_input"));
+    assert.equal(msgs[2].result.isError, true);
+    assert.ok(msgs[2].result.content[0].text.includes("总开关"));
+  } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });

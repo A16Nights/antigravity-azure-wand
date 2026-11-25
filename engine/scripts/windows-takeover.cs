@@ -381,6 +381,7 @@ namespace DshTakeover {
     int captureDepth;
     int cursorError;
     string text = "", hint = "", position = "top";
+    string cursorTagText = "苍蓝魔杖", overlayTheme = "azure";
     int idleMs = 800;
 
     internal Controller(string eventName, bool tests) {
@@ -496,8 +497,15 @@ namespace DshTakeover {
           ConfigureVisibility(Get(command,"remoteIndicatorVisible",true));
           cursorIndicator = Get(command, "cursorIndicatorEnabled", true);
           string nextText = Get(command, "indicatorText", Words.Get("indicatorDefault")), nextPosition = Get(command, "indicatorPosition", "top"), nextHint = Words.Get("stopHint");
-          bool rebuild = nextIndicator != indicator || nextText != text || nextHint != hint || nextPosition != position || prevShortcut != stopShortcut || frames.Count == 0;
+          string nextTag = Get(command, "cursorTagText", cursorTagText);
+          if (string.IsNullOrWhiteSpace(nextTag)) nextTag = "苍蓝魔杖";
+          nextTag = nextTag.Trim();
+          if (nextTag.Length > 18) nextTag = nextTag.Substring(0, 18);
+          string nextTheme = Get(command, "progressOverlayTheme", overlayTheme);
+          if (nextTheme != "azure" && nextTheme != "abyss" && nextTheme != "frost" && nextTheme != "lavender") nextTheme = "azure";
+          bool rebuild = nextIndicator != indicator || nextText != text || nextHint != hint || nextPosition != position || prevShortcut != stopShortcut || nextTheme != overlayTheme || frames.Count == 0;
           indicator = nextIndicator; text = nextText; hint = nextHint; position = nextPosition;
+          cursorTagText = nextTag; overlayTheme = nextTheme;
           idleMs = Math.Max(200, Math.Min(3000, Get(command, "indicatorIdleMs", 800)));
           bool alreadyArmed=armed;
           armed=true;previewOnly=action=="preview"&&!alreadyArmed;
@@ -583,11 +591,16 @@ namespace DshTakeover {
           new Thread(()=>{Thread.Sleep(80);keyboard.TestStop();}){IsBackground=true}.Start();
           Thread.Sleep(Get(command,"milliseconds",500));
         } else if (action == "configure") {
-          string prevShortcut = stopShortcut;
+          string prevShortcut = stopShortcut, prevTheme = overlayTheme;
           ConfigureShortcut(Get(command, "stopShortcut", ""));
           ConfigureVisibility(Get(command,"remoteIndicatorVisible",remoteVisible));
-          cursorIndicator = Get(command, "cursorIndicatorEnabled", cursorIndicator); UpdatePointer(255);
-          if (prevShortcut != stopShortcut && armed && !paused && indicator && frames.Count > 0) { HideFrames(); ShowFrames(); }
+          cursorIndicator = Get(command, "cursorIndicatorEnabled", cursorIndicator);
+          string nextTag = Get(command, "cursorTagText", cursorTagText);
+          if (!string.IsNullOrWhiteSpace(nextTag)) { nextTag = nextTag.Trim(); cursorTagText = nextTag.Length > 18 ? nextTag.Substring(0, 18) : nextTag; }
+          string nextTheme = Get(command, "progressOverlayTheme", overlayTheme);
+          if (nextTheme == "azure" || nextTheme == "abyss" || nextTheme == "frost" || nextTheme == "lavender") overlayTheme = nextTheme;
+          UpdatePointer(255);
+          if ((prevShortcut != stopShortcut || prevTheme != overlayTheme) && armed && !paused && indicator && frames.Count > 0) { HideFrames(); ShowFrames(); }
         } else if (action == "end") {
           hideAt = DateTime.UtcNow.AddMilliseconds(idleMs);
         } else if (action == "stop") {
@@ -707,7 +720,7 @@ namespace DshTakeover {
       }else{draw();Emit(new {kind="stopped",reason=reason});}
     }
     void ShowFrames() {
-      foreach (var bounds in displays) { var frame = new Frame(bounds, text, position, remoteVisible&&captureDepth==0, stopShortcut, Native.ScaleForDisplay(bounds)); frames.Add(frame); frame.Show(); frame.Present(255); }
+      foreach (var bounds in displays) { var frame = new Frame(bounds, text, position, remoteVisible&&captureDepth==0, stopShortcut, Native.ScaleForDisplay(bounds), overlayTheme); frames.Add(frame); frame.Show(); frame.Present(255); }
     }
     void HideFrames() { foreach (var frame in frames) frame.Dispose(); frames.Clear(); }
     void UpdatePointer(byte alpha) {
@@ -716,8 +729,8 @@ namespace DshTakeover {
       if(testMode&&testPointerPoint.HasValue)point=testPointerPoint.Value;
       else if (!Native.GetCursorPos(out point)) { cursorError=Marshal.GetLastWin32Error(); HidePointer(); return; }
       cursorError=0;
-      if (pointer == null) { pointer = new PointerFrame(remoteVisible&&captureDepth==0); pointer.Update(point, alpha); pointer.Show(); }
-      else pointer.Update(point, alpha);
+      if (pointer == null) { pointer = new PointerFrame(remoteVisible&&captureDepth==0); pointer.Update(point, alpha, cursorTagText, overlayTheme); pointer.Show(); }
+      else pointer.Update(point, alpha, cursorTagText, overlayTheme);
     }
     void HidePointer() { if (pointer != null) { pointer.Dispose(); pointer = null; } }
     void CloseProgress() {
@@ -766,7 +779,7 @@ namespace DshTakeover {
     internal bool Locked=true;
     internal double BackgroundOpacity=.6;
     Font bodyFont,headingFont,titleFont,footerFont;
-    string header="",subheader="",bodyText="";
+    string header="",subheader="",bodyText="",theme="azure";
     string[] headings=new string[0];
     bool followOutput=true,remoteVisible=true,configuredLocked=true,configured,presenting,draggingThumb,revealedResult,previewUnlocked,hoverUnlocked,hoverBlocked=true,sizing;
     // Resting the pointer on the lock button this long unlocks the window; it
@@ -833,6 +846,8 @@ namespace DshTakeover {
         } else {var area=Screen.PrimaryScreen.WorkingArea;if(position!="custom"){x=position.EndsWith("right")?area.Right-width-20:area.Left+20;y=position.StartsWith("bottom")?area.Bottom-height-20:area.Top+70;}var next=new Rectangle(x,y,width,height);if(Bounds!=next)Bounds=next;geometry=signature;}
       }
       if(!configured||configuredLocked!=locked){SetLocked(locked,false);configuredLocked=locked;}
+      string nextTheme=TextValue(settings,"progressOverlayTheme");
+      if(nextTheme=="azure"||nextTheme=="abyss"||nextTheme=="frost"||nextTheme=="lavender")theme=nextTheme;else theme="azure";
       configured=true;remoteVisible=visible;BackgroundOpacity=Math.Max(.2,Math.Min(1,opacity/100.0));
       if(IsHandleCreated){Native.ApplyDisplayAffinity(this,visible);RefreshDpi();}Present();
     }
@@ -1036,39 +1051,92 @@ namespace DshTakeover {
     // The lock button stays in the top-right corner: a closed padlock while
     // the mouse passes through (a ring fills while the pointer rests on it),
     // an open one (click to lock) with Close beside it while unlocked.
-    void DrawButtons(Graphics g,Pen closePen){
-      float cx=Width-scale*19,cy=scale*18,r=scale*12;var disc=new RectangleF(cx-r,cy-r,2*r,2*r);
-      using(var brush=new SolidBrush(Color.FromArgb(Locked?(hoverFraction>0?76:34):52,220,229,242)))g.FillEllipse(brush,disc);
-      if(Locked&&hoverFraction>0)using(var ring=new Pen(Color.FromArgb(245,122,180,255),Math.Max(1.5f,scale*2))){g.DrawArc(ring,disc.X+scale,disc.Y+scale,disc.Width-2*scale,disc.Height-2*scale,-90,360*hoverFraction);}
-      Color ink=Locked?Color.FromArgb(220,196,208,224):Color.FromArgb(245,238,242,248);
+    void DrawButtons(Graphics g,Pen closePen,Color accentRing,bool lightMode){
+      float cx=Width-scale*19,cy=scale*19,r=scale*11.5f;var disc=new RectangleF(cx-r,cy-r,2*r,2*r);
+      Color discFill=lightMode?Color.FromArgb(Locked?(hoverFraction>0?72:34):52,14,116,144):Color.FromArgb(Locked?(hoverFraction>0?86:38):58,125,211,252);
+      using(var brush=new SolidBrush(discFill))g.FillEllipse(brush,disc);
+      if(Locked&&hoverFraction>0)using(var ring=new Pen(accentRing,Math.Max(1.6f,scale*2))){g.DrawArc(ring,disc.X+scale,disc.Y+scale,disc.Width-2*scale,disc.Height-2*scale,-90,360*hoverFraction);}
+      Color ink=lightMode?(Locked?Color.FromArgb(220,30,58,95):Color.FromArgb(245,15,23,42)):(Locked?Color.FromArgb(225,186,230,253):Color.FromArgb(248,240,249,255));
       float lift=Locked?0:scale*3;
       using(var pen=new Pen(ink,Math.Max(1f,scale*1.3f)))using(var fill=new SolidBrush(ink)){
         g.DrawArc(pen,cx-scale*3.5f,cy-scale*7-lift,scale*7,scale*9,180,180);
         if(lift>0)g.DrawLine(pen,cx-scale*3.5f,cy-scale*2.5f-lift,cx-scale*3.5f,cy-scale*2);
         using(var body=Frame.Rounded(new RectangleF(cx-scale*5.5f,cy-scale*2,scale*11,scale*8),Math.Max(1,scale*1.5f)))g.FillPath(fill,body);
       }
-      if(!Locked){float x=Width-scale*46,y=scale*17.5f,d=scale*4.5f;g.DrawLine(closePen,x-d,y-d,x+d,y+d);g.DrawLine(closePen,x-d,y+d,x+d,y-d);}
+      if(!Locked){float x=Width-scale*46,y=scale*18.5f,d=scale*4.5f;g.DrawLine(closePen,x-d,y-d,x+d,y+d);g.DrawLine(closePen,x-d,y+d,x+d,y-d);}
     }
     Bitmap DrawSurface(){
       var image=new Bitmap(Math.Max(1,Width),Math.Max(1,Height),PixelFormat.Format32bppPArgb);
+      bool lightMode=theme=="frost";
+      int bgAlpha=(int)Math.Round(BackgroundOpacity*255);
+      Color bgTop,bgBottom,accentStart,accentEnd,borderColor,innerGlow,titleColor,headingColor,bodyColor,mutedColor,shadowColor,dotColor,dividerColor,trackColor,thumbColor;
+      if(theme=="abyss"){
+        bgTop=Color.FromArgb(bgAlpha,10,15,29);bgBottom=Color.FromArgb(bgAlpha,18,26,48);
+        accentStart=Color.FromArgb(235,99,102,241);accentEnd=Color.FromArgb(235,56,189,248);
+        borderColor=Color.FromArgb(165,112,132,248);innerGlow=Color.FromArgb(38,199,210,254);
+        titleColor=Color.FromArgb(255,241,245,255);headingColor=Color.FromArgb(255,165,180,252);
+        bodyColor=Color.FromArgb(252,226,234,248);mutedColor=Color.FromArgb(230,148,163,196);
+        shadowColor=Color.FromArgb(155,4,7,16);dotColor=Color.FromArgb(255,129,140,248);
+        dividerColor=Color.FromArgb(56,129,140,248);trackColor=Color.FromArgb(34,165,180,252);thumbColor=Color.FromArgb(135,129,140,248);
+      } else if(theme=="frost"){
+        bgTop=Color.FromArgb(bgAlpha,242,248,255);bgBottom=Color.FromArgb(bgAlpha,226,238,252);
+        accentStart=Color.FromArgb(235,2,132,199);accentEnd=Color.FromArgb(235,99,102,241);
+        borderColor=Color.FromArgb(150,14,165,233);innerGlow=Color.FromArgb(140,255,255,255);
+        titleColor=Color.FromArgb(255,15,23,42);headingColor=Color.FromArgb(255,3,105,161);
+        bodyColor=Color.FromArgb(255,30,41,59);mutedColor=Color.FromArgb(235,71,85,105);
+        shadowColor=Color.FromArgb(70,255,255,255);dotColor=Color.FromArgb(255,2,132,199);
+        dividerColor=Color.FromArgb(58,2,132,199);trackColor=Color.FromArgb(32,2,132,199);thumbColor=Color.FromArgb(128,14,165,233);
+      } else if(theme=="lavender"){
+        bgTop=Color.FromArgb(bgAlpha,24,18,44);bgBottom=Color.FromArgb(bgAlpha,38,27,68);
+        accentStart=Color.FromArgb(240,192,132,252);accentEnd=Color.FromArgb(240,56,189,248);
+        borderColor=Color.FromArgb(175,167,139,250);innerGlow=Color.FromArgb(46,233,213,255);
+        titleColor=Color.FromArgb(255,250,245,255);headingColor=Color.FromArgb(255,216,180,254);
+        bodyColor=Color.FromArgb(252,240,236,252);mutedColor=Color.FromArgb(232,188,176,216);
+        shadowColor=Color.FromArgb(155,10,5,22);dotColor=Color.FromArgb(255,251,191,36);
+        dividerColor=Color.FromArgb(62,192,132,252);trackColor=Color.FromArgb(36,216,180,254);thumbColor=Color.FromArgb(140,192,132,252);
+      } else {
+        bgTop=Color.FromArgb(bgAlpha,14,24,44);bgBottom=Color.FromArgb(bgAlpha,22,35,64);
+        accentStart=Color.FromArgb(240,56,189,248);accentEnd=Color.FromArgb(240,99,102,241);
+        borderColor=Color.FromArgb(170,56,189,248);innerGlow=Color.FromArgb(44,186,230,253);
+        titleColor=Color.FromArgb(255,240,249,255);headingColor=Color.FromArgb(255,125,211,252);
+        bodyColor=Color.FromArgb(252,226,238,252);mutedColor=Color.FromArgb(232,148,178,214);
+        shadowColor=Color.FromArgb(150,4,10,22);dotColor=Color.FromArgb(255,56,189,248);
+        dividerColor=Color.FromArgb(60,56,189,248);trackColor=Color.FromArgb(34,125,211,252);thumbColor=Color.FromArgb(140,56,189,248);
+      }
       using(var g=Graphics.FromImage(image)){
         g.Clear(Color.Transparent);g.SmoothingMode=SmoothingMode.AntiAlias;g.TextRenderingHint=TextRenderingHint.AntiAliasGridFit;
-        using(var shape=Frame.Rounded(new RectangleF(.5f,.5f,Width-1,Height-1),Px(8)))using(var bg=new SolidBrush(Color.FromArgb((int)Math.Round(BackgroundOpacity*255),25,29,38)))using(var border=new Pen(Color.FromArgb(140,117,161,218),1)){g.FillPath(bg,shape);g.DrawPath(border,shape);}
-        using(var fg=new SolidBrush(Color.FromArgb(255,246,247,250)))using(var muted=new SolidBrush(Color.FromArgb(245,185,198,216)))using(var shadow=new SolidBrush(Color.FromArgb(150,0,0,0)))using(var pen=new Pen(Color.FromArgb(235,203,216,232),Px(1.3f)))using(var format=(StringFormat)StringFormat.GenericTypographic.Clone()){
+        float radius=Px(12);
+        using(var shape=Frame.Rounded(new RectangleF(.5f,.5f,Width-1,Height-1),radius))
+        using(var bg=new LinearGradientBrush(new RectangleF(0,0,Width,Height),bgTop,bgBottom,LinearGradientMode.Vertical)){
+          g.FillPath(bg,shape);
+          var cardClip=g.Save();g.SetClip(shape);
+          float barH=Math.Max(2f,scale*2.6f);
+          using(var barBrush=new LinearGradientBrush(new RectangleF(0,0,Math.Max(2,Width),barH),accentStart,accentEnd,LinearGradientMode.Horizontal))g.FillRectangle(barBrush,0,0,Width,barH);
+          float headerBottom=Px(subheader.Length==0?36:56);
+          using(var divPen=new Pen(dividerColor,1f))g.DrawLine(divPen,Px(12),headerBottom,Width-Px(12),headerBottom);
+          g.Restore(cardClip);
+          using(var innerShape=Frame.Rounded(new RectangleF(1.5f,1.5f,Math.Max(2,Width-3),Math.Max(2,Height-3)),Math.Max(2,radius-1)))
+          using(var innerPen=new Pen(innerGlow,1f))g.DrawPath(innerPen,innerShape);
+          using(var border=new Pen(borderColor,1.2f))g.DrawPath(border,shape);
+        }
+        using(var fg=new SolidBrush(bodyColor))using(var titleBrush=new SolidBrush(titleColor))using(var headBrush=new SolidBrush(headingColor))using(var muted=new SolidBrush(mutedColor))using(var shadow=new SolidBrush(shadowColor))using(var pen=new Pen(lightMode?Color.FromArgb(235,30,41,59):Color.FromArgb(235,203,225,248),Px(1.3f)))using(var format=(StringFormat)StringFormat.GenericTypographic.Clone()){
           format.FormatFlags|=StringFormatFlags.NoWrap|StringFormatFlags.MeasureTrailingSpaces;format.Trimming=StringTrimming.EllipsisCharacter;
-          float halo=Math.Max(1f,scale*.75f);
-          Shadowed(g,header,titleFont,fg,shadow,new RectangleF(Px(12),Px(10),Math.Max(10,Width-Px(Locked?52:68)),Px(24)),format,halo);
-          DrawButtons(g,pen);
-          if(subheader!="")Shadowed(g,subheader,footerFont,muted,shadow,new RectangleF(Px(12),Px(36),Math.Max(10,Width-Px(24)),Px(21)),format,halo);
+          float halo=Math.Max(.8f,scale*.7f);
+          float dotSize=Math.Max(6f,scale*7f),dotX=Px(12),dotY=Px(15.5f);
+          using(var dotHalo=new SolidBrush(Color.FromArgb(78,dotColor.R,dotColor.G,dotColor.B)))g.FillEllipse(dotHalo,dotX-scale*2.5f,dotY-scale*2.5f,dotSize+scale*5f,dotSize+scale*5f);
+          using(var dotFill=new SolidBrush(dotColor))g.FillEllipse(dotFill,dotX,dotY,dotSize,dotSize);
+          Shadowed(g,header,titleFont,titleBrush,shadow,new RectangleF(Px(25),Px(10),Math.Max(10,Width-Px(Locked?64:82)),Px(24)),format,halo);
+          DrawButtons(g,pen,accentStart,lightMode);
+          if(subheader!="")Shadowed(g,subheader,footerFont,muted,shadow,new RectangleF(Px(12),Px(35),Math.Max(10,Width-Px(24)),Px(20)),format,halo);
           var clip=g.Save();g.SetClip(viewport);int first=scrollY/LineHeight,last=Math.Min(lines.Count,(scrollY+viewport.Height)/LineHeight+1);
-          for(int i=first;i<last;i++){var line=lines[i];Font font=line.heading?headingFont:bodyFont;Brush brush=line.heading?muted:fg;float x=viewport.X,y=viewport.Y+i*LineHeight-scrollY;g.DrawString(line.text,font,shadow,new PointF(x+halo,y+halo),format);g.DrawString(line.text,font,brush,new PointF(x,y),format);}
+          for(int i=first;i<last;i++){var line=lines[i];Font font=line.heading?headingFont:bodyFont;Brush brush=line.heading?headBrush:fg;float x=viewport.X,y=viewport.Y+i*LineHeight-scrollY;g.DrawString(line.text,font,shadow,new PointF(x+halo,y+halo),format);g.DrawString(line.text,font,brush,new PointF(x,y),format);}
           g.Restore(clip);
           if(!Locked)Shadowed(g,Words.Get(hoverUnlocked?"hintUnlocked":previewUnlocked?"hintPreview":"hintAdjust"),footerFont,muted,shadow,new RectangleF(Px(12),Height-Px(22),Math.Max(10,Width-Px(24)),Px(20)),format,halo);
         }
         // The translucent scrollbar appears only when there is more to read.
         if(MaxScroll>0){
-          using(var shape=Frame.Rounded(track,Math.Max(1,Px(3))))using(var brush=new SolidBrush(Color.FromArgb(32,220,229,242)))g.FillPath(brush,shape);
-          using(var shape=Frame.Rounded(thumb,Math.Max(1,Px(3))))using(var brush=new SolidBrush(Color.FromArgb(112,220,229,242)))g.FillPath(brush,shape);
+          using(var shape=Frame.Rounded(track,Math.Max(1,Px(3))))using(var brush=new SolidBrush(trackColor))g.FillPath(brush,shape);
+          using(var shape=Frame.Rounded(thumb,Math.Max(1,Px(3))))using(var brush=new SolidBrush(thumbColor))g.FillPath(brush,shape);
         }
       }return image;
     }
@@ -1105,6 +1173,7 @@ namespace DshTakeover {
     Rectangle lastBounds;
     byte lastAlpha;
     SizeF lastExtent;
+    string lastTag = "苍蓝魔杖", lastTheme = "azure";
     bool remoteVisible;
     internal PointerFrame(bool visible) {
       remoteVisible=visible;
@@ -1122,18 +1191,24 @@ namespace DshTakeover {
     internal bool ClickThrough { get { return (Native.GetWindowLong(Handle,-20)&0x08080020)==0x08080020; } }
     internal bool CaptureExcluded { get { uint affinity; return Native.GetWindowDisplayAffinity(Handle,out affinity)&&affinity==0x11; } }
     // Geometry in 96-DPI units. The tag sits just past the pointer's visible
-    // extent; the canvas grows with it, and the default arrow keeps 120x84.
+    // extent; the canvas grows dynamically with the custom tag text.
     static float TagX(SizeF extent) { return Math.Max(13f,extent.Width+2); }
     static float TagY(SizeF extent) { return Math.Max(17f,extent.Height-1); }
-    static float CanvasWidth(SizeF extent) { return Math.Max(120f,24+TagX(extent)+48); }
-    static float CanvasHeight(SizeF extent) { return Math.Max(84f,24+TagY(extent)+27); }
-    static bool FlipX(Native.Point point, Rectangle screen, float zoom, SizeF extent) { return screen.Right-point.x < (CanvasWidth(extent)-24)*zoom; }
+    static float MeasureTagWidth(string tagText) {
+      string label=string.IsNullOrWhiteSpace(tagText)?"苍蓝魔杖":tagText.Trim();
+      using(var bmp=new Bitmap(1,1))using(var g=Graphics.FromImage(bmp))using(var font=new Font("Microsoft YaHei UI",10f,FontStyle.Bold,GraphicsUnit.Pixel))using(var format=new StringFormat(StringFormat.GenericTypographic)) {
+        return Math.Max(40f,(float)Math.Ceiling(g.MeasureString(label,font,PointF.Empty,format).Width)+18f);
+      }
+    }
+    static float CanvasWidth(SizeF extent, string tagText = "苍蓝魔杖") { return Math.Max(120f,24+TagX(extent)+MeasureTagWidth(tagText)+12f); }
+    static float CanvasHeight(SizeF extent) { return Math.Max(84f,24+TagY(extent)+30); }
+    static bool FlipX(Native.Point point, Rectangle screen, float zoom, SizeF extent, string tagText = "苍蓝魔杖") { return screen.Right-point.x < (CanvasWidth(extent,tagText)-24)*zoom; }
     static bool FlipY(Native.Point point, Rectangle screen, float zoom, SizeF extent) { return screen.Bottom-point.y < (CanvasHeight(extent)-18)*zoom; }
-    internal static Rectangle LayoutForPoint(Native.Point point, Rectangle screen, float zoom) { return LayoutForPoint(point,screen,zoom,SizeF.Empty); }
-    internal static Rectangle LayoutForPoint(Native.Point point, Rectangle screen, float zoom, SizeF extent) {
-      float canvasWidth=CanvasWidth(extent),canvasHeight=CanvasHeight(extent);
+    internal static Rectangle LayoutForPoint(Native.Point point, Rectangle screen, float zoom) { return LayoutForPoint(point,screen,zoom,SizeF.Empty,"苍蓝魔杖"); }
+    internal static Rectangle LayoutForPoint(Native.Point point, Rectangle screen, float zoom, SizeF extent, string tagText = "苍蓝魔杖") {
+      float canvasWidth=CanvasWidth(extent,tagText),canvasHeight=CanvasHeight(extent);
       int width=(int)Math.Ceiling(canvasWidth*zoom),height=(int)Math.Ceiling(canvasHeight*zoom);
-      int centerX=(int)Math.Round((FlipX(point,screen,zoom,extent)?canvasWidth-24:24)*zoom),centerY=(int)Math.Round((FlipY(point,screen,zoom,extent)?canvasHeight-24:24)*zoom);
+      int centerX=(int)Math.Round((FlipX(point,screen,zoom,extent,tagText)?canvasWidth-24:24)*zoom),centerY=(int)Math.Round((FlipY(point,screen,zoom,extent)?canvasHeight-24:24)*zoom);
       return new Rectangle(point.x-centerX,point.y-centerY,width,height);
     }
     // The user's pointer size: the arrow's visible extent past its hotspot, in
@@ -1178,53 +1253,56 @@ namespace DshTakeover {
         if(info.color!=IntPtr.Zero)Native.DeleteObject(info.color);
       }
     }
-    internal void Update(Native.Point point, byte alpha) {
+    internal void Update(Native.Point point, byte alpha, string tagText = "苍蓝魔杖", string theme = "azure") {
+      string label=string.IsNullOrWhiteSpace(tagText)?"苍蓝魔杖":tagText.Trim();
+      string nextTheme=(theme=="abyss"||theme=="frost"||theme=="lavender")?theme:"azure";
       var screen=Native.DisplayFromPoint(point);
       uint dpiX=96,dpiY=96; try { if(Native.GetDpiForMonitor(Native.MonitorFromPoint(point,2),0,out dpiX,out dpiY)!=0)dpiX=96; } catch(EntryPointNotFoundException) { }
       float zoom=Math.Max(1f,Math.Min(3f,dpiX/96f));
       var extent=PointerExtent();
-      bool nextFlipX=FlipX(point,screen,zoom,extent),nextFlipY=FlipY(point,screen,zoom,extent);
-      bool redraw=bitmap==IntPtr.Zero||Math.Abs(scale-zoom)>.01f||flipX!=nextFlipX||flipY!=nextFlipY||extent!=lastExtent;
+      bool nextFlipX=FlipX(point,screen,zoom,extent,label),nextFlipY=FlipY(point,screen,zoom,extent);
+      bool redraw=bitmap==IntPtr.Zero||Math.Abs(scale-zoom)>.01f||flipX!=nextFlipX||flipY!=nextFlipY||extent!=lastExtent||lastTag!=label||lastTheme!=nextTheme;
       if(redraw) {
-        using(var image=Draw(zoom,nextFlipX,nextFlipY,extent)) {
+        using(var image=Draw(zoom,nextFlipX,nextFlipY,extent,label,nextTheme)) {
           IntPtr next=image.GetHbitmap(Color.FromArgb(0));
           IntPtr selected=Native.SelectObject(dc,next);
           if(bitmap==IntPtr.Zero)previous=selected; else Native.DeleteObject(bitmap);
           bitmap=next;
         }
-        scale=zoom;flipX=nextFlipX;flipY=nextFlipY;lastExtent=extent;
+        scale=zoom;flipX=nextFlipX;flipY=nextFlipY;lastExtent=extent;lastTag=label;lastTheme=nextTheme;
       }
-      var bounds=LayoutForPoint(point,screen,zoom,extent);
+      var bounds=LayoutForPoint(point,screen,zoom,extent,label);
       if(!redraw&&bounds==lastBounds&&alpha==lastAlpha)return;
       var destination=new Native.Point(bounds.X,bounds.Y);var origin=new Native.Point(0,0);var size=new Native.Size(bounds.Width,bounds.Height);
       var blend=new Native.Blend { op=0,flags=0,alpha=alpha,format=1 };
       if(!Native.UpdateLayeredWindow(Handle,IntPtr.Zero,ref destination,ref size,dc,ref origin,0,ref blend,2))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(),"Could not present pointer indicator");
       lastBounds=bounds;lastAlpha=alpha;
     }
-    internal static Bitmap Draw(float zoom,bool left,bool up) { return Draw(zoom,left,up,SizeF.Empty); }
-    internal static Bitmap Draw(float zoom,bool left,bool up,SizeF extent) {
-      float canvasWidth=CanvasWidth(extent),canvasHeight=CanvasHeight(extent);
+    internal static Bitmap Draw(float zoom,bool left,bool up) { return Draw(zoom,left,up,SizeF.Empty,"苍蓝魔杖","azure"); }
+    internal static Bitmap Draw(float zoom,bool left,bool up,SizeF extent,string tagText = "苍蓝魔杖",string theme = "azure") {
+      string label=string.IsNullOrWhiteSpace(tagText)?"苍蓝魔杖":tagText.Trim();
+      float canvasWidth=CanvasWidth(extent,label),canvasHeight=CanvasHeight(extent);
       var image=new Bitmap((int)Math.Ceiling(canvasWidth*zoom),(int)Math.Ceiling(canvasHeight*zoom),PixelFormat.Format32bppPArgb);
+      Color glowColor=theme=="lavender"?Color.FromArgb(130,192,132,252):theme=="abyss"?Color.FromArgb(130,99,102,241):Color.FromArgb(135,56,189,248);
+      Color pillA=theme=="lavender"?Color.FromArgb(255,147,51,234):theme=="abyss"?Color.FromArgb(255,37,99,235):theme=="frost"?Color.FromArgb(255,2,132,199):Color.FromArgb(255,14,165,233);
+      Color pillB=theme=="lavender"?Color.FromArgb(255,56,189,248):theme=="abyss"?Color.FromArgb(255,79,70,229):theme=="frost"?Color.FromArgb(255,79,70,229):Color.FromArgb(255,99,102,241);
       using(var g=Graphics.FromImage(image)) {
         g.Clear(Color.Transparent);g.SmoothingMode=SmoothingMode.AntiAlias;g.TextRenderingHint=TextRenderingHint.AntiAliasGridFit;g.ScaleTransform(zoom,zoom);
         float x=left?canvasWidth-24:24,y=up?canvasHeight-24:24;
-        // A soft spotlight under the tip instead of a hard ring.
         using(var spot=new GraphicsPath()) {
           spot.AddEllipse(x-16,y-16,32,32);
-          using(var glow=new PathGradientBrush(spot) { CenterColor=Color.FromArgb(120,86,134,254), SurroundColors=new[] { Color.FromArgb(0,86,134,254) } }) g.FillPath(glow,spot);
+          using(var glow=new PathGradientBrush(spot) { CenterColor=glowColor, SurroundColors=new[] { Color.FromArgb(0,glowColor.R,glowColor.G,glowColor.B) } }) g.FillPath(glow,spot);
         }
-        // A solid name tag just past the arrow, like collaborative cursors.
-        using(var font=new Font("Segoe UI",10,FontStyle.Bold,GraphicsUnit.Pixel))
+        using(var font=new Font("Microsoft YaHei UI",10,FontStyle.Bold,GraphicsUnit.Pixel))
         using(var format=new StringFormat(StringFormat.GenericTypographic) { Alignment=StringAlignment.Center, LineAlignment=StringAlignment.Center }) {
-          float w=(float)Math.Ceiling(g.MeasureString("DSH",font,PointF.Empty,format).Width)+14,h=19;
-          // Below-right clears the pointer's whole extent; the other corners only need to clear the tip.
+          float w=Math.Max(40f,(float)Math.Ceiling(g.MeasureString(label,font,PointF.Empty,format).Width)+18f),h=21;
           float bx=left?x-8-w:up?x+13:x+TagX(extent),by=up?y-10-h:left?y+17:y+TagY(extent);
-          using(var shadow=Frame.Rounded(new RectangleF(bx,by+1.5f,w,h),6)) using(var brush=new SolidBrush(Color.FromArgb(60,0,0,0))) g.FillPath(brush,shadow);
+          using(var shadow=Frame.Rounded(new RectangleF(bx,by+1.8f,w,h),7)) using(var brush=new SolidBrush(Color.FromArgb(72,4,10,24))) g.FillPath(brush,shadow);
           using(var shape=TagShape(new RectangleF(bx,by,w,h),left,up)) {
-            using(var fill=new SolidBrush(Color.FromArgb(255,57,100,254)))g.FillPath(fill,shape);
-            using(var outline=new Pen(Color.FromArgb(240,255,255,255),1.25f))g.DrawPath(outline,shape);
+            using(var fill=new LinearGradientBrush(new RectangleF(bx,by,w,h),pillA,pillB,LinearGradientMode.Horizontal))g.FillPath(fill,shape);
+            using(var outline=new Pen(Color.FromArgb(225,224,242,254),1.25f))g.DrawPath(outline,shape);
           }
-          using(var brush=new SolidBrush(Color.White))g.DrawString("DSH",font,brush,new RectangleF(bx,by+.5f,w,h),format);
+          using(var brush=new SolidBrush(Color.White))g.DrawString(label,font,brush,new RectangleF(bx,by+.5f,w,h),format);
         }
       }
       return image;
@@ -1247,11 +1325,11 @@ namespace DshTakeover {
     readonly Rectangle rectangle;
     bool remoteVisible;
     IntPtr dc, bitmap, previous;
-    internal Frame(Rectangle bounds, string text, string position, bool visible, string stopShortcut = "", float dpiScale = 0f) {
+    internal Frame(Rectangle bounds, string text, string position, bool visible, string stopShortcut = "", float dpiScale = 0f, string theme = "azure") {
       remoteVisible=visible;rectangle = bounds; AutoScaleMode=AutoScaleMode.None;FormBorderStyle = FormBorderStyle.None;
       ShowInTaskbar = false; TopMost = true; StartPosition = FormStartPosition.Manual;
       Bounds=bounds;
-      using (var image = Draw(bounds.Width, bounds.Height, text, position, stopShortcut, dpiScale)) bitmap = image.GetHbitmap(Color.FromArgb(0));
+      using (var image = Draw(bounds.Width, bounds.Height, text, position, stopShortcut, dpiScale, theme)) bitmap = image.GetHbitmap(Color.FromArgb(0));
       dc = Native.CreateCompatibleDC(IntPtr.Zero); previous = Native.SelectObject(dc, bitmap);
     }
     protected override bool ShowWithoutActivation { get { return true; } }
@@ -1273,24 +1351,28 @@ namespace DshTakeover {
     internal static Bitmap Draw(int width, int height, string text, string position) {
       return Draw(width, height, text, position, "", 0f);
     }
-    internal static Bitmap Draw(int width, int height, string text, string position, string stopShortcut = "", float dpiScale = 0f) {
+    internal static Bitmap Draw(int width, int height, string text, string position, string stopShortcut = "", float dpiScale = 0f, string theme = "azure") {
       var image = new Bitmap(width,height,PixelFormat.Format32bppPArgb);
+      Color edgeCore=theme=="lavender"?Color.FromArgb(238,216,180,254):theme=="abyss"?Color.FromArgb(235,165,180,252):Color.FromArgb(238,125,211,252);
+      Color edgeOuter=theme=="lavender"?Color.FromArgb(255,168,85,247):theme=="abyss"?Color.FromArgb(255,99,102,241):Color.FromArgb(255,56,189,248);
+      Color pillBgA=theme=="lavender"?Color.FromArgb(242,26,18,48):theme=="frost"?Color.FromArgb(242,240,248,255):Color.FromArgb(242,14,24,44);
+      Color pillBgB=theme=="lavender"?Color.FromArgb(242,40,28,72):theme=="frost"?Color.FromArgb(242,224,238,252):Color.FromArgb(242,24,38,68);
+      Color pillOutline=theme=="lavender"?Color.FromArgb(150,192,132,252):theme=="frost"?Color.FromArgb(140,14,165,233):Color.FromArgb(150,56,189,248);
+      Color dotRgb=theme=="lavender"?Color.FromArgb(255,251,191,36):theme=="frost"?Color.FromArgb(255,2,132,199):Color.FromArgb(255,56,189,248);
+      Color fgText=theme=="frost"?Color.FromArgb(255,15,23,42):Color.FromArgb(255,240,249,255);
+      Color mutedText=theme=="frost"?Color.FromArgb(215,51,65,85):Color.FromArgb(210,186,230,253);
       using (var g = Graphics.FromImage(image)) {
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        // ClearType needs an opaque surface; layered windows need grayscale text.
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
         g.Clear(Color.Transparent);
         float scale = dpiScale > 0f ? dpiScale : Math.Max(1f, Math.Min(2f, width/1920f));
-        // Edge glow: a bright core line that reads on dark wallpapers, then a
-        // DeepSeek-blue falloff that reads on light ones.
         g.CompositingMode = CompositingMode.SourceCopy;
         int core = (int)Math.Round(2*scale), glow = core+(int)Math.Round(18*scale);
         for (int i=0;i<glow;i++) {
-          var color = i<core ? Color.FromArgb(235,150,184,255) : Color.FromArgb((int)(175*Math.Pow(1-(i-core)/(double)(glow-core),2.2)),77,124,254);
+          var color = i<core ? edgeCore : Color.FromArgb((int)(180*Math.Pow(1-(i-core)/(double)(glow-core),2.2)),edgeOuter.R,edgeOuter.G,edgeOuter.B);
           using (var pen = new Pen(color,1)) g.DrawRectangle(pen,i,i,width-2*i-1,height-2*i-1);
         }
         g.CompositingMode = CompositingMode.SourceOver;
-        // Status pill: live dot, the user's text, then an Esc (or Esc / custom) keycap.
         using (var font = new Font("Microsoft YaHei UI",10.5f*scale,FontStyle.Regular,GraphicsUnit.Point))
         using (var keyFont = new Font("Segoe UI",8.5f*scale,FontStyle.Bold,GraphicsUnit.Point))
         using (var hintFont = new Font("Microsoft YaHei UI",9.5f*scale,FontStyle.Regular,GraphicsUnit.Point))
@@ -1306,31 +1388,31 @@ namespace DshTakeover {
           float x=(float)Math.Round((width-pillWidth)/2), y=position=="bottom"?height-pillHeight-24*scale:24*scale, middle=y+pillHeight/2;
           for (int i=1;i<=6;i++)
             using (var shadow=Rounded(new RectangleF(x-i,y-i+2*scale,pillWidth+2*i,pillHeight+2*i),pillHeight/2+i))
-            using (var brush=new SolidBrush(Color.FromArgb(9,0,0,0))) g.FillPath(brush,shadow);
+            using (var brush=new SolidBrush(Color.FromArgb(10,4,10,24))) g.FillPath(brush,shadow);
           using (var shape=Rounded(new RectangleF(x,y,pillWidth,pillHeight),pillHeight/2)) {
-            using (var fill=new SolidBrush(Color.FromArgb(238,20,22,28))) g.FillPath(fill,shape);
-            using (var outline=new Pen(Color.FromArgb(40,255,255,255),1)) g.DrawPath(outline,shape);
+            using (var fill=new LinearGradientBrush(new RectangleF(x,y,pillWidth,pillHeight),pillBgA,pillBgB,LinearGradientMode.Horizontal)) g.FillPath(fill,shape);
+            using (var outline=new Pen(pillOutline,1.2f)) g.DrawPath(outline,shape);
           }
           float cursor=x+padding;
-          using (var halo=new SolidBrush(Color.FromArgb(64,86,134,254))) g.FillEllipse(halo,cursor-3*scale,middle-dot/2-3*scale,dot+6*scale,dot+6*scale);
-          using (var fill=new SolidBrush(Color.FromArgb(255,86,134,254))) g.FillEllipse(fill,cursor,middle-dot/2,dot,dot);
+          using (var halo=new SolidBrush(Color.FromArgb(72,dotRgb.R,dotRgb.G,dotRgb.B))) g.FillEllipse(halo,cursor-3*scale,middle-dot/2-3*scale,dot+6*scale,dot+6*scale);
+          using (var fill=new SolidBrush(dotRgb)) g.FillEllipse(fill,cursor,middle-dot/2,dot,dot);
           cursor+=dot+gap;
-          using (var brush=new SolidBrush(Color.FromArgb(255,245,247,250)))
+          using (var brush=new SolidBrush(fgText))
           using (var format=new StringFormat(StringFormat.GenericTypographic) { LineAlignment=StringAlignment.Center, Trimming=StringTrimming.EllipsisCharacter, FormatFlags=StringFormatFlags.NoWrap })
             g.DrawString(text,font,brush,new RectangleF(cursor,y,textWidth+1,pillHeight),format);
           cursor+=textWidth+gap;
-          using (var line=new Pen(Color.FromArgb(56,255,255,255),1)) g.DrawLine(line,cursor,middle-8*scale,cursor,middle+8*scale);
+          using (var line=new Pen(Color.FromArgb(72,pillOutline.R,pillOutline.G,pillOutline.B),1)) g.DrawLine(line,cursor,middle-8*scale,cursor,middle+8*scale);
           cursor+=1+gap;
           var key=new RectangleF(cursor,middle-keyHeight/2,keyWidth,keyHeight);
           using (var shape=Rounded(key,5*scale)) {
-            using (var fill=new SolidBrush(Color.FromArgb(34,255,255,255))) g.FillPath(fill,shape);
-            using (var outline=new Pen(Color.FromArgb(64,255,255,255),1)) g.DrawPath(outline,shape);
+            using (var fill=new SolidBrush(theme=="frost"?Color.FromArgb(26,2,132,199):Color.FromArgb(36,56,189,248))) g.FillPath(fill,shape);
+            using (var outline=new Pen(Color.FromArgb(110,pillOutline.R,pillOutline.G,pillOutline.B),1)) g.DrawPath(outline,shape);
           }
-          using (var brush=new SolidBrush(Color.FromArgb(255,245,247,250)))
+          using (var brush=new SolidBrush(fgText))
           using (var format=new StringFormat(StringFormat.GenericTypographic) { Alignment=StringAlignment.Center, LineAlignment=StringAlignment.Center })
             g.DrawString(keyLabel,keyFont,brush,key,format);
           cursor+=keyWidth+6*scale;
-          using (var brush=new SolidBrush(Color.FromArgb(200,245,247,250)))
+          using (var brush=new SolidBrush(mutedText))
           using (var format=new StringFormat(StringFormat.GenericTypographic) { LineAlignment=StringAlignment.Center, FormatFlags=StringFormatFlags.NoWrap })
             g.DrawString(hint,hintFont,brush,new RectangleF(cursor,y,hintWidth+2,pillHeight),format);
         }
