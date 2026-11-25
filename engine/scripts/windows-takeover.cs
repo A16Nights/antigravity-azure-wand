@@ -1,4 +1,4 @@
-// Original Windows UI for DSH. Uses only framework APIs; no input is synthesized.
+// Original Windows UI for Antigravity. Uses only framework APIs; no input is synthesized.
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -16,7 +16,7 @@ using System.Web.Script.Serialization;
 #endif
 using System.Windows.Forms;
 
-namespace DshTakeover {
+namespace WandTakeover {
   // PowerShell 7 uses modern .NET, where System.Web's serializer is unavailable.
   // Keep the command dictionary's primitive/array shapes identical on both runtimes.
   internal sealed class CommandJson {
@@ -51,7 +51,7 @@ namespace DshTakeover {
     public T Deserialize<T>(string text) { return inner.Deserialize<T>(text); }
 #endif
   }
-  // The words drawn here arrive with each command, in the DSH interface
+  // The words drawn here arrive with each command, in the Antigravity interface
   // language (mcp/overlay-strings.mjs, #74). A missing key shows as itself.
   internal static class Words {
     static Dictionary<string,object> current = new Dictionary<string,object>();
@@ -177,7 +177,7 @@ namespace DshTakeover {
 
   // Where the user's own mouse last moved, for the overlay's lock button. A
   // low-level hook records local and remote-desktop mouse movement. Only
-  // injected movement bearing DSH's input marker is skipped; remote tools
+  // injected movement bearing Antigravity's input marker is skipped; remote tools
   // also set LLMHF_INJECTED. SetCursorPos never reaches the hook.
   // The hook stores one number, so system input never waits on the overlay.
   internal sealed class PointerWatch : IDisposable {
@@ -186,7 +186,7 @@ namespace DshTakeover {
     IntPtr hook; volatile uint threadId; long packed; volatile bool seen, testFed, disposed;
     internal PointerWatch() {
       callback = OnMouse;
-      new Thread(Run) { IsBackground = true, Name = "DSH overlay pointer" }.Start();
+      new Thread(Run) { IsBackground = true, Name = "Antigravity overlay pointer" }.Start();
       ready.WaitOne(2000);
     }
     internal bool Active { get { return hook != IntPtr.Zero; } }
@@ -252,7 +252,7 @@ namespace DshTakeover {
     internal KeyboardWatch(string eventName, Func<int,bool,bool,bool> onKey) {
       handle=onKey;callback=OnKey;
       available=new EventWaitHandle(false,EventResetMode.ManualReset,eventName+"-ready");
-      new Thread(Run){IsBackground=true,Name="DSH stop keyboard"}.Start();
+      new Thread(Run){IsBackground=true,Name="Antigravity stop keyboard"}.Start();
       if(!started.WaitOne(3000)||!Active)throw new InvalidOperationException("Could not start the stop keyboard listener");
     }
     internal bool Active {get{return hook!=IntPtr.Zero&&!disposed;}}
@@ -300,7 +300,7 @@ namespace DshTakeover {
       mapping=MemoryMappedFile.CreateOrOpen(name,8);
       view=mapping.CreateViewAccessor(0,8);
       if(!Read(false))throw new InvalidOperationException("Could not initialize shared stop listener");
-      thread=new Thread(Run){IsBackground=true,Name="DSH shared stop"};thread.Start();
+      thread=new Thread(Run){IsBackground=true,Name="Antigravity shared stop"};thread.Start();
     }
     bool Acquire(int timeout) {
       try{return mutex.WaitOne(timeout);}catch(AbandonedMutexException){return true;}
@@ -390,7 +390,7 @@ namespace DshTakeover {
       var handle = dispatcher.Handle;
       cancel.Reset();
       string group=tests?(Environment.GetEnvironmentVariable("WCU_TEST_STOP_GROUP")??eventName+"-test-stop"):
-        "Local\\DSH-WCU-AllStop-v1-"+WindowsIdentity.GetCurrent().User.Value;
+        "Local\\AzureWand-AllStop-v1-"+WindowsIdentity.GetCurrent().User.Value;
       stopBus=new StopBus(group,()=>{if(armed&&!paused&&!shuttingDown)Stop("shared-stop",false);});
       keyboard=new KeyboardWatch(eventName,HandleKey);
       timer.Interval = 35;
@@ -410,7 +410,7 @@ namespace DshTakeover {
       };
       SyncTimer();
       SystemEventsSubscribe();
-      new Thread(ReadCommands) { IsBackground = true, Name = "DSH takeover control" }.Start();
+      new Thread(ReadCommands) { IsBackground = true, Name = "Antigravity takeover control" }.Start();
       RefreshDisplays(true);
       // The Windows process id: under WSL the server sees only the id of the
       // interop process that started this one (#79).
@@ -752,7 +752,7 @@ namespace DshTakeover {
       if(testMode&&testOverlayCursor.HasValue)cursor=testOverlayCursor.Value;
       else if(!Native.GetCursorPos(out cursor))return;
       // The cursor must still be where the user's last local/remote move left it;
-      // DSH moving it elsewhere (SetCursorPos) breaks the match.
+      // Antigravity moving it elsewhere (SetCursorPos) breaks the match.
       bool userPointer=pointerWatch.Latest(out moved)&&Math.Abs(moved.x-cursor.x)<=2&&Math.Abs(moved.y-cursor.y)<=2;
       progress.TrackPointer(cursor,userPointer);
     }
@@ -871,7 +871,7 @@ namespace DshTakeover {
     // passes the mouse through, resting the user's own pointer on it for a
     // moment unlocks the window, so it can be moved and resized; once the
     // pointer has been away for a while it locks again. The saved lock setting
-    // is not changed, and DSH's own pointer moves never count (userPointer=false).
+    // is not changed, and Antigravity's own pointer moves never count (userPointer=false).
     internal void TrackPointer(Native.Point cursor,bool userPointer){
       if(IsDisposed)return;
       var now=DateTime.UtcNow;var at=new Point(cursor.x-Left,cursor.y-Top);
@@ -955,7 +955,7 @@ namespace DshTakeover {
     static bool Flag(Dictionary<string,object> data,string key){object v;if(data==null||!data.TryGetValue(key,out v)||v==null)return false;try{return Convert.ToBoolean(v);}catch(FormatException){return false;}}
     internal static long Whole(Dictionary<string,object> data,string key){object v;if(data==null||!data.TryGetValue(key,out v)||v==null)return 0;try{return Convert.ToInt64(v);}catch(FormatException){return 0;}catch(InvalidCastException){return 0;}catch(OverflowException){return 0;}}
     static string Shorten(string text,int limit){text=text.Trim();return text.Length>limit?"…"+text.Substring(text.Length-limit+1):text;}
-    // DSH renders Markdown, so plain text shows the same words without the
+    // Antigravity renders Markdown, so plain text shows the same words without the
     // marks; paragraphs follow each other without blank lines in a small window.
     static readonly System.Text.RegularExpressions.Regex RxCodeFence=new System.Text.RegularExpressions.Regex(@"(?m)^[ \t]*```[^\n]*\n?",System.Text.RegularExpressions.RegexOptions.Compiled);
     static readonly System.Text.RegularExpressions.Regex RxImage=new System.Text.RegularExpressions.Regex(@"!\[([^\]\n]*)\]\([^)\n]*\)",System.Text.RegularExpressions.RegexOptions.Compiled);
@@ -990,7 +990,7 @@ namespace DshTakeover {
       revealedResult=true;
       if(TotalHeight-at*LineHeight>viewport.Height){scrollY=Math.Min(MaxScroll,at*LineHeight);followOutput=false;LayoutScrollbar();}
     }
-    // One heading per model step ("Step 3 · Scroll the page"), then the text DSH
+    // One heading per model step ("Step 3 · Scroll the page"), then the text Antigravity
     // showed for that step. Older steps keep only their last lines; the current
     // step and the reply are shown in full.
     static string StepHeading(Dictionary<string,object> entry){

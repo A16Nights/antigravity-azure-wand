@@ -1,12 +1,12 @@
 // Problem reports. "Report a problem" on the settings page writes one plain
 // text file to the user's Downloads folder: the environment, the plugin's
-// self-test, its recent computer-use calls and its lines from the DSH log. It
+// self-test, its recent computer-use calls and its lines from the Antigravity log. It
 // then opens the Downloads folder and GitHub's new-issue page, and the user
 // drags the file there. Nothing leaves this computer unless the user attaches
 // it. Local paths, the user name and the computer name are replaced, typed
 // text is kept as its length only, and no screenshot is added.
-// Patterns: DSH Desktop's own diagnostics export (logs plus system facts in one
-// archive), dshmarket's home-path redaction, VS Code's issue reporter and
+// Patterns: Antigravity Desktop's own diagnostics export (logs plus system facts in one
+// archive), marketplace's home-path redaction, VS Code's issue reporter and
 // electron-util's debugInfo + openNewGitHubIssue (the material attached to a
 // new issue).
 import { execFile, spawn } from 'node:child_process';
@@ -15,15 +15,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { SETTINGS_SCHEMA, STOP_SHORTCUT_PATTERN } from './settings-schema.mjs';
 
-export const ISSUE_URL = 'https://github.com/Yu-tao-Li/dsh-computer-use-win/issues/new';
-export const DIAGNOSTICS_ROUTE = '/dsh-computer-use-win/api/diagnostics';
+export const ISSUE_URL = 'https://github.com/A16Nights/antigravity-azure-wand/issues/new';
+export const DIAGNOSTICS_ROUTE = '/azure-wand/api/diagnostics';
 const CALL_LIMIT = 30;
 const LOG_LINE_LIMIT = 200;
 const LOG_TAIL_BYTES = 2 * 1024 * 1024;
 // Argument values that can carry what the user typed or read: kept as a length.
 const VALUE_KEYS = new Set(['text', 'value', 'keys', 'thenKeys', 'query', 'url', 'path', 'paths', 'title', 'windowTitle', 'name', 'content', 'password', 'script', 'arguments', 'args', 'prompt', 'filter']);
 const LABEL_KEYS = new Set(['action', 'button', 'direction', 'elementId', 'scope', 'browserTab']);
-const PLUGIN_MARKERS = ['windows-computer-use', 'dsh-computer-use-win', 'wincu', 'WCU_'];
+const PLUGIN_MARKERS = ['windows-computer-use', 'azure-wand', 'wincu', 'WCU_'];
 const CREDENTIAL_HEADER = 'cookie|set-cookie|authorization|proxy-authorization';
 // A field named token, alone or with a prefix: token, access_token, idToken, csrftoken.
 const TOKEN_FIELD = '[a-z]*[_-]?token';
@@ -116,7 +116,7 @@ function errorText(result) {
   return text || String(result?.error?.message ?? '');
 }
 
-// The last computer-use calls in this DSH run, in memory only.
+// The last computer-use calls in this Antigravity run, in memory only.
 export function installCallLog(ctx, { limit = CALL_LIMIT, redact = makeRedactor() } = {}) {
   const calls = [];
   ctx.on('tools/execute', async (exec, next) => {
@@ -160,7 +160,7 @@ $cv=Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion'
 $o.windows=[ordered]@{product=$cv.ProductName;display=$cv.DisplayVersion;build=$cv.CurrentBuild;ubr=$cv.UBR;edition=$cv.EditionID}
 $o.powershell=$PSVersionTable.PSVersion.ToString()
 $o.pwsh=[bool](Get-Command pwsh -ErrorAction SilentlyContinue)
-try{$o.desktopVersions=@(Get-Process -Name 'DSH Desktop' | ForEach-Object {$_.FileVersion} | Where-Object {$_ -match '^\\d+(\\.\\d+){1,3}$'} | Sort-Object -Unique)}catch{}
+try{$o.desktopVersions=@(Get-Process -Name 'Antigravity' | ForEach-Object {$_.FileVersion} | Where-Object {$_ -match '^\\d+(\\.\\d+){1,3}$'} | Sort-Object -Unique)}catch{}
 try{Add-Type -AssemblyName System.Windows.Forms,System.Drawing;$g=[System.Drawing.Graphics]::FromHwnd([IntPtr]::Zero);$o.systemDpi=[int]$g.DpiX;$g.Dispose();$o.screens=@([System.Windows.Forms.Screen]::AllScreens|ForEach-Object{[ordered]@{primary=$_.Primary;bounds="$($_.Bounds.Width)x$($_.Bounds.Height)@$($_.Bounds.X),$($_.Bounds.Y)"}})}catch{}
 $k='HKCU:\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https'
 $o.defaultBrowser=(Get-ItemProperty "$k\\UserChoiceLatest\\ProgId").ProgId
@@ -222,8 +222,8 @@ export async function runSelfTest(serverPath, { timeout = 45000, env = process.e
   };
 }
 
-// The plugin's lines from DSH's own log files (newest two per folder, their
-// last 2 MiB), the last 200 of them. DSH writes warnings to its main log and
+// The plugin's lines from Antigravity's own log files (newest two per folder, their
+// last 2 MiB), the last 200 of them. Antigravity writes warnings to its main log and
 // its error log alike, so a line already taken from one file is not repeated.
 export function pluginLogLines(dirs, { limit = LOG_LINE_LIMIT, markers = PLUGIN_MARKERS } = {}) {
   const lines = [], seen = new Set();
@@ -257,10 +257,10 @@ export function pluginLogLines(dirs, { limit = LOG_LINE_LIMIT, markers = PLUGIN_
   return lines.slice(-limit);
 }
 
-export function dshLogDirs(env = process.env) {
+export function hostLogDirs(env = process.env) {
   const dirs = [];
-  if (env.APPDATA) for (const sub of ['DSH Desktop/logs', 'DSH Desktop/logs/host']) dirs.push(path.join(env.APPDATA, sub));
-  const home = env.DSH_HOME || path.join(os.homedir(), '.dsh');
+  if (env.APPDATA) for (const sub of ['Antigravity/logs', 'Antigravity/logs']) dirs.push(path.join(env.APPDATA, sub));
+  const home = env.ANTIGRAVITY_HOME || path.join(os.homedir(), '.gemini', 'antigravity');
   dirs.push(path.join(home, 'logs'));
   return dirs.filter(dir => { try { return statSync(dir).isDirectory(); } catch { return false; } });
 }
@@ -270,11 +270,11 @@ export function environmentSummary(facts) {
   const s = facts.settings ?? {};
   const rows = [
     `插件 / Plugin: ${facts.version}${facts.installSource ? ` (${facts.installSource})` : ''}`,
-    `宿主 / Host: ${facts.host ?? 'unknown'}${facts.desktopVersions?.length ? ` ${facts.desktopVersions.join(' / ')}` : ''}${facts.mcpClient ? `, dsh-mcp-client ${facts.mcpClient}` : ''}${facts.electron ? `, Electron ${facts.electron}` : ''}, Node ${facts.node}`,
+    `宿主 / Host: ${facts.host ?? 'unknown'}${facts.desktopVersions?.length ? ` ${facts.desktopVersions.join(' / ')}` : ''}${facts.mcpClient ? `, wand-mcp-client ${facts.mcpClient}` : ''}${facts.electron ? `, Electron ${facts.electron}` : ''}, Node ${facts.node}`,
     `Windows: ${[facts.windows?.product, facts.windows?.display, facts.windows?.build ? `build ${facts.windows.build}${facts.windows.ubr != null ? '.' + facts.windows.ubr : ''}` : ''].filter(Boolean).join(' ') || facts.osRelease}${facts.arch ? ` (${facts.arch})` : ''}`,
     `PowerShell: ${facts.powershell ?? 'unknown'}${facts.pwsh ? ' (pwsh available)' : ''}`,
     `屏幕 / Screens: ${(facts.screens ?? []).map(screen => screen.bounds + (screen.primary ? '*' : '')).join(' ') || 'unknown'}${facts.systemDpi ? `, ${facts.systemDpi} dpi` : ''}`,
-    `语言 / Locale: DSH ${facts.dshLocale ?? '?'}, ${facts.culture ?? '?'} / UI ${facts.uiCulture ?? '?'}`,
+    `语言 / Locale: Antigravity ${facts.hostLocale ?? '?'}, ${facts.culture ?? '?'} / UI ${facts.uiCulture ?? '?'}`,
     `浏览器 / Browsers: default ${facts.defaultBrowser ?? '?'}${Object.entries(facts.browsers ?? {}).map(([key, version]) => `, ${key} ${version}`).join('')}`,
     `设置 / Settings: tools ${s.toolPreset ?? '?'}, browser ${s.browserApp ?? '?'}, visible ${s.browserVisible}, sign-ins ${s.browserSignIn}, attach ${s.browserAttachUser}, overlay ${s.progressOverlayEnabled}`,
     `__COMPAT_LAYER: ${facts.compatLayer ? facts.compatLayer : 'not set'}`,
@@ -290,9 +290,9 @@ export function diagnosticsText(facts, { calls = [], logs = [], at = new Date() 
   const section = (title, body) => ['', `== ${title} ==`, body];
   const callLines = calls.length
     ? calls.map(call => [call.at, call.tool, `${call.ms ?? '?'} ms`, call.ok ? 'ok' : `error: ${oneLine(call.error)}`, JSON.stringify(call.args ?? {})].join('  ')).join('\n')
-    : '这次启动 DSH 后还没有电脑操控调用。/ No computer-use calls since DSH started.';
+    : '这次启动 Antigravity 后还没有电脑操控调用。/ No computer-use calls since Antigravity started.';
   return [
-    'dsh-computer-use-win 诊断信息 / diagnostics',
+    'azure-wand 诊断信息 / diagnostics',
     `导出时间 / Exported: ${at.toISOString()} · 插件 / plugin ${facts.version}`,
     '上传前请检查日志和错误信息。工具输入文字只保留长度，报告不包含截图。',
     'Review the logs and errors before attaching this file. Tool input text is kept as its length; screenshots are excluded.',
@@ -301,7 +301,7 @@ export function diagnosticsText(facts, { calls = [], logs = [], at = new Date() 
     ...(facts.bridge ? section('宿主 MCP 注册 / Host MCP registration', JSON.stringify(facts.bridge, null, 2)) : []),
     ...section('自检 / Self-test', JSON.stringify(facts.selfTest ?? { ok: false, error: 'not run' }, null, 2)),
     ...section(`最近的电脑操控调用 / Recent computer-use calls (${calls.length})`, callLines),
-    ...section(`DSH 日志里和本插件相关的行 / Plugin lines in the DSH log (${logs.length})`, logs.length ? logs.join('\n') : '没有找到。/ None found.'),
+    ...section(`Antigravity 日志里和本插件相关的行 / Plugin lines in the Antigravity log (${logs.length})`, logs.length ? logs.join('\n') : '没有找到。/ None found.'),
     '',
   ].join('\n');
 }
@@ -328,7 +328,7 @@ function diagnosticSettings(settings) {
 
 // Collects, writes and returns { file, fileName }. Settings keep their shape;
 // the banner text the user wrote is kept as its length.
-export async function exportDiagnostics({ version, settings = {}, calls = [], host, mcpClient, bridge, dshLocale, installSpec, serverPath, defaultBrowser, env = process.env, secrets = [], at = new Date(), outDir, selfTest, facts: given, saveAs = saveDiagnosticsAs } = {}) {
+export async function exportDiagnostics({ version, settings = {}, calls = [], host, mcpClient, bridge, hostLocale, installSpec, serverPath, defaultBrowser, env = process.env, secrets = [], at = new Date(), outDir, selfTest, facts: given, saveAs = saveDiagnosticsAs } = {}) {
   const redact = makeRedactor({ secrets: [...secrets, env.WCU_APPROVAL_SECRET] });
   const [system,health] = await Promise.all([
     given?.system ?? systemFacts(),
@@ -336,15 +336,15 @@ export async function exportDiagnostics({ version, settings = {}, calls = [], ho
   ]);
   const installSource = !installSpec ? undefined : /^(?:file|link):/.test(installSpec) ? 'local' : /^(?:git|https?:|github:)/.test(installSpec) ? 'git' : 'registry';
   const facts = {
-    version, host, mcpClient, bridge, dshLocale, installSource, settings: diagnosticSettings(settings),
-    desktopVersions: host === 'DSH Desktop' ? system.desktopVersions : undefined,
+    version, host, mcpClient, bridge, hostLocale, installSource, settings: diagnosticSettings(settings),
+    desktopVersions: host === 'Antigravity' ? system.desktopVersions : undefined,
     node: process.versions.node, electron: process.versions.electron, arch: process.arch, osRelease: `${os.type()} ${os.release()}`,
     windows: system.windows, powershell: system.powershell, pwsh: system.pwsh, screens: system.screens, systemDpi: system.systemDpi,
     culture: system.culture, uiCulture: system.uiCulture, browsers: given?.browsers ?? browserVersions(env), defaultBrowser: defaultBrowser ?? system.defaultBrowser,
     compatLayer: Object.entries(env).find(([key]) => key.toUpperCase() === '__COMPAT_LAYER')?.[1],
     selfTest: health,
   };
-  const logs = (given?.logs ?? pluginLogLines(dshLogDirs(env))).map(line => clip(redact(line), 600));
+  const logs = (given?.logs ?? pluginLogLines(hostLogDirs(env))).map(line => clip(redact(line), 600));
   // A BOM and CRLF line ends, so every Notepad shows the Chinese and the lines right.
   const text = diagnosticsText(redactDiagnosticValue(facts, redact), {
     calls: redactDiagnosticValue(calls, redact), logs, at,
@@ -363,7 +363,7 @@ export async function exportDiagnostics({ version, settings = {}, calls = [], ho
     }
   } catch (error) {
     if (!saveAs) throw error;
-    const file = await saveAs({ fileName, contents, dshLocale });
+    const file = await saveAs({ fileName, contents, hostLocale });
     return file === null ? { cancelled: true } : { file, fileName: path.basename(file) };
   }
 }
@@ -402,9 +402,9 @@ try {
 } finally { $dialog.Dispose(); $owner.Dispose() }
 `;
 
-export function saveDiagnosticsAs({ fileName, contents, dshLocale }) {
+export function saveDiagnosticsAs({ fileName, contents, hostLocale }) {
   if (process.platform !== 'win32') throw new Error('Windows Save As is unavailable in this host');
-  const zh = /^zh\b/i.test(dshLocale ?? '');
+  const zh = /^zh\b/i.test(hostLocale ?? '');
   const command = Buffer.from(saveDialogScript, 'utf16le').toString('base64');
   return new Promise((resolve, reject) => {
     const child = spawn(powershellPath(), ['-NoProfile', '-STA', '-EncodedCommand', command], {
@@ -466,7 +466,7 @@ export async function revealAndOpen({ file }, run = launch) {
   return { folderOpened, issueOpened };
 }
 
-// A request from the DSH page itself: loopback host, not cross-site, the same
+// A request from the Antigravity page itself: loopback host, not cross-site, the same
 // origin when one is sent, and this plugin's own header, which a page on
 // another site cannot add without a preflight that is never answered.
 export function trustedRequest(request) {
@@ -500,11 +500,11 @@ export function createDiagnosticsHandler({ collect, open = revealAndOpen, logger
     try {
       let result;
       try { result = await collect(); }
-      catch (error) { logger?.warn?.('dsh-computer-use-win: diagnostics export failed: %s', error?.message ?? error); }
+      catch (error) { logger?.warn?.('azure-wand: diagnostics export failed: %s', error?.message ?? error); }
       if (result?.cancelled) { sendJson(response, 200, { ok: false, cancelled: true }); return; }
       let opened;
       try { opened = await open(result ?? {}); }
-      catch (error) { logger?.warn?.('dsh-computer-use-win: could not open the diagnostics: %s', error?.message ?? error); }
+      catch (error) { logger?.warn?.('azure-wand: could not open the diagnostics: %s', error?.message ?? error); }
       sendJson(response, result ? 200 : 500, { ok: Boolean(result), fileName: result?.fileName, filePath: result?.file, ...opened });
     } finally { running = false; }
   };
@@ -518,7 +518,7 @@ export function readInstallSpec(pluginRoot, profileDir) {
   let dir = path.resolve(pluginRoot);
   for (let i = 0; i < 8; i++) { const parent = path.dirname(dir); if (parent === dir) break; dir = parent; candidates.push(dir); }
   for (const candidate of candidates) {
-    try { const spec = JSON.parse(readFileSync(path.join(candidate, 'package.json'), 'utf8')).dependencies?.['dsh-computer-use-win']; if (typeof spec === 'string') return spec; } catch { }
+    try { const spec = JSON.parse(readFileSync(path.join(candidate, 'package.json'), 'utf8')).dependencies?.['azure-wand']; if (typeof spec === 'string') return spec; } catch { }
   }
   return undefined;
 }

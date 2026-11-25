@@ -1,4 +1,4 @@
-﻿# dsh-independent-input sidecar
+﻿# azure-wand-independent sidecar
 # Windows PowerShell 5.1, STA. 一条 JSON 一行请求/响应。
 # 设计目标：默认不碰主人的真实光标和键盘焦点（UIA / 窗口消息），
 # 物理输入只作为显式回退，并且主人一碰鼠标键盘就立刻暂停、还原光标。
@@ -12,23 +12,23 @@ try {
 
 # AI 光标模式：companion = 一直陪着；clean = 用一下就收。
 # 插件 config / 环境变量都可以改，运行中还能用 setCursorMode 切换。
-$script:cursorMode = if ($env:DSH_INPUT_CURSOR_MODE -eq 'clean' -or $env:DSH_INPUT_CURSOR_MODE -eq 'avoidance') { $env:DSH_INPUT_CURSOR_MODE } else { 'companion' }
+$script:cursorMode = if ($env:AZURE_WAND_CURSOR_MODE -eq 'clean' -or $env:AZURE_WAND_CURSOR_MODE -eq 'avoidance') { $env:AZURE_WAND_CURSOR_MODE } else { 'companion' }
 $script:cursorHoldMs = 2600
-if ($env:DSH_INPUT_CURSOR_HOLD_MS) {
-  try { $script:cursorHoldMs = [int]$env:DSH_INPUT_CURSOR_HOLD_MS } catch { }
+if ($env:AZURE_WAND_CURSOR_HOLD_MS) {
+  try { $script:cursorHoldMs = [int]$env:AZURE_WAND_CURSOR_HOLD_MS } catch { }
 }
 # AI 光标大小（像素，24–192）。素材是 64×64，按最近邻放大/缩小。
 $script:cursorSize = 64
-if ($env:DSH_INPUT_CURSOR_SIZE) {
-  try { $script:cursorSize = [int]$env:DSH_INPUT_CURSOR_SIZE } catch { }
+if ($env:AZURE_WAND_CURSOR_SIZE) {
+  try { $script:cursorSize = [int]$env:AZURE_WAND_CURSOR_SIZE } catch { }
 }
 if ($script:cursorSize -lt 24) { $script:cursorSize = 24 }
 if ($script:cursorSize -gt 192) { $script:cursorSize = 192 }
 # AI 光标样式：主人给的 15 只光标里选一只。
 $script:styleNames = @('pointer','work','unavailiable','link','text','cross','busy','move','vert','horz','help','handwriting','dgn1','dgn2','alternate')
 $script:cursorStyle = 'pointer'
-if ($env:DSH_INPUT_CURSOR_STYLE) {
-  $wanted = ([string]$env:DSH_INPUT_CURSOR_STYLE).ToLower()
+if ($env:AZURE_WAND_CURSOR_STYLE) {
+  $wanted = ([string]$env:AZURE_WAND_CURSOR_STYLE).ToLower()
   if ($script:styleNames -contains $wanted) { $script:cursorStyle = $wanted }
 }
 
@@ -37,7 +37,7 @@ if ($env:DSH_INPUT_CURSOR_STYLE) {
 $dpiCode = @'
 using System;
 using System.Runtime.InteropServices;
-public static class DshDpiBootstrap {
+public static class WandDpiBootstrap {
   [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
   public static void Apply() {
@@ -46,7 +46,7 @@ public static class DshDpiBootstrap {
   }
 }
 '@
-try { Add-Type -TypeDefinition $dpiCode; [DshDpiBootstrap]::Apply() } catch { }
+try { Add-Type -TypeDefinition $dpiCode; [WandDpiBootstrap]::Apply() } catch { }
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -77,7 +77,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-public static class DshInput
+public static class WandInput
 {
     public const int WH_KEYBOARD_LL = 13;
     public const int WH_MOUSE_LL = 14;
@@ -320,7 +320,7 @@ public static class DshInput
     static LowLevelProc keyProc = KeyHookProc;
     public static bool HotkeyRegistered = false;
 
-    static DshInput()
+    static WandInput()
     {
         try { SetProcessDpiAwarenessContext(new IntPtr(-4)); }
         catch { try { SetProcessDPIAware(); } catch { } }
@@ -486,14 +486,14 @@ public static class DshInput
         Paused = true;
         PauseReason = reason;
         ReleaseAll();
-        DshOverlay.SetPaused(true);
+        WandOverlay.SetPaused(true);
     }
 
     public static void Resume()
     {
         Paused = false;
         PauseReason = "";
-        DshOverlay.SetPaused(false);
+        WandOverlay.SetPaused(false);
     }
 
     public static void ReleaseAll()
@@ -956,7 +956,7 @@ public static class DshInput
     }
 }
 
-public static class DshOverlay
+public static class WandOverlay
 {
     static Thread thread = null;
     static OverlayForm form = null;
@@ -1358,8 +1358,8 @@ public static class DshOverlay
             if (Visible)
             {
                 Location = new Point(lastX, lastY);
-                DshInput.SetWindowPos(Handle, DshInput.HWND_TOPMOST, lastX, lastY, size, size,
-                    (uint)(DshInput.SWP_NOACTIVATE | DshInput.SWP_SHOWWINDOW));
+                WandInput.SetWindowPos(Handle, WandInput.HWND_TOPMOST, lastX, lastY, size, size,
+                    (uint)(WandInput.SWP_NOACTIVATE | WandInput.SWP_SHOWWINDOW));
                 PresentFrame();
             }
         }
@@ -1403,10 +1403,10 @@ public static class DshOverlay
             TopMost = false;
             TopMost = true;
             BringToFront();
-            bool ok = DshInput.SetWindowPos(Handle, DshInput.HWND_TOPMOST, x, y, displaySize, displaySize,
-                (uint)(DshInput.SWP_NOACTIVATE | DshInput.SWP_SHOWWINDOW));
-            DshOverlay.LastSetWindowPosOk = ok;
-            DshOverlay.LastSetWindowPosError = Marshal.GetLastWin32Error();
+            bool ok = WandInput.SetWindowPos(Handle, WandInput.HWND_TOPMOST, x, y, displaySize, displaySize,
+                (uint)(WandInput.SWP_NOACTIVATE | WandInput.SWP_SHOWWINDOW));
+            WandOverlay.LastSetWindowPosOk = ok;
+            WandOverlay.LastSetWindowPosError = Marshal.GetLastWin32Error();
             frame = 0;
             animTimer.Start();
             hideTimer.Stop();
@@ -1650,25 +1650,25 @@ function Invoke-UiaScroll([int]$x, [int]$y, [int]$delta) {
 
 function Get-WindowsList {
   $result = @()
-  $foreground = [long][DshInput]::GetForegroundWindow()
-  foreach ($h in [DshInput]::EnumTopWindows()) {
+  $foreground = [long][WandInput]::GetForegroundWindow()
+  foreach ($h in [WandInput]::EnumTopWindows()) {
     try {
-      if (-not [DshInput]::IsWindowVisible($h)) { continue }
-      $title = [DshInput]::WindowTitle($h)
+      if (-not [WandInput]::IsWindowVisible($h)) { continue }
+      $title = [WandInput]::WindowTitle($h)
       if ([string]::IsNullOrWhiteSpace($title)) { continue }
-      $pid2 = [DshInput]::WindowPid($h)
+      $pid2 = [WandInput]::WindowPid($h)
       $procName = ''
       try { $procName = (Get-Process -Id $pid2 -ErrorAction Stop).ProcessName } catch { }
-      $rect = [DshInput]::WindowRect($h)
+      $rect = [WandInput]::WindowRect($h)
       $result += @{
         hwnd = [long]$h
         title = $title
-        className = [DshInput]::WindowClass($h)
+        className = [WandInput]::WindowClass($h)
         process = $procName
         pid = $pid2
         rect = @{ x = $rect[0]; y = $rect[1]; w = $rect[2]; h = $rect[3] }
         foreground = ([long]$h -eq $foreground)
-        iconic = [DshInput]::IsIconic($h)
+        iconic = [WandInput]::IsIconic($h)
       }
     } catch { }
   }
@@ -1724,38 +1724,38 @@ function Get-Vk([string]$name) {
 # ---------------------------------------------------------------- status
 
 function Get-StatusResult {
-  $cursor = [DshInput]::CursorPos()
-  $fg = [DshInput]::GetForegroundWindow()
+  $cursor = [WandInput]::CursorPos()
+  $fg = [WandInput]::GetForegroundWindow()
   $fgTitle = ''
-  try { $fgTitle = [DshInput]::WindowTitle($fg) } catch { }
+  try { $fgTitle = [WandInput]::WindowTitle($fg) } catch { }
   return @{
-    paused = [DshInput]::Paused
-    pauseReason = [DshInput]::PauseReason
-    lastUserInputAgeMs = [DshInput]::LastUserInputAgeMs()
+    paused = [WandInput]::Paused
+    pauseReason = [WandInput]::PauseReason
+    lastUserInputAgeMs = [WandInput]::LastUserInputAgeMs()
     cursor = @{ x = $cursor[0]; y = $cursor[1] }
     foreground = @{
       hwnd = [long]$fg
       title = $fgTitle
-      className = [DshInput]::WindowClass($fg)
-      pid = [DshInput]::WindowPid($fg)
+      className = [WandInput]::WindowClass($fg)
+      pid = [WandInput]::WindowPid($fg)
     }
-    overlay = [DshOverlay]::VisibleNow()
-    overlayRect = [DshOverlay]::Bounds()
-    overlayHwnd = [DshOverlay]::HandleId()
+    overlay = [WandOverlay]::VisibleNow()
+    overlayRect = [WandOverlay]::Bounds()
+    overlayHwnd = [WandOverlay]::HandleId()
     hotkey = 'Ctrl+Alt+Q'
-    hotkeyRegistered = [DshInput]::HotkeyRegistered
+    hotkeyRegistered = [WandInput]::HotkeyRegistered
     uia = $script:uia
     cursorMode = $script:cursorMode
     cursorHoldMs = $script:cursorHoldMs
     cursorSize = $script:cursorSize
     cursorStyle = $script:cursorStyle
-    cursorState = if ([DshInput]::Paused) { 'unavailiable' } else { $script:cursorStyle }
-    userActiveMs = [DshInput]::UserActiveMs
+    cursorState = if ([WandInput]::Paused) { 'unavailiable' } else { $script:cursorStyle }
+    userActiveMs = [WandInput]::UserActiveMs
   }
 }
 
 function Get-PausedResult {
-  if (-not [DshInput]::Paused) { return $null }
+  if (-not [WandInput]::Paused) { return $null }
   return @{
     ok = $false
     paused = $true
@@ -1766,8 +1766,8 @@ function Get-PausedResult {
 
 function Show-StateAt([string]$state, [int]$x, [int]$y) {
   if ($script:styleNames -contains $state) { $script:cursorStyle = $state }
-  [DshOverlay]::SetStyle($script:cursorStyle)
-  [DshOverlay]::ShowAt($x, $y)
+  [WandOverlay]::SetStyle($script:cursorStyle)
+  [WandOverlay]::ShowAt($x, $y)
 }
 
 # ---------------------------------------------------------------- requests
@@ -1782,13 +1782,13 @@ function Invoke-Request($req) {
       $m = [string]$req.mode
       if ($m -eq 'clean' -or $m -eq 'companion' -or $m -eq 'avoidance') { $script:cursorMode = $m }
       if ($null -ne $req.holdMs) { $script:cursorHoldMs = [int]$req.holdMs }
-      [DshOverlay]::SetMode($script:cursorMode, $script:cursorHoldMs)
+      [WandOverlay]::SetMode($script:cursorMode, $script:cursorHoldMs)
       return @{ ok = $true; cursorMode = $script:cursorMode; cursorHoldMs = $script:cursorHoldMs }
     }
     'setCursorSize' {
       $s = [int]$req.size
       if ($s -ge 24 -and $s -le 192) { $script:cursorSize = $s }
-      [DshOverlay]::SetSize($script:cursorSize)
+      [WandOverlay]::SetSize($script:cursorSize)
       return @{ ok = $true; cursorSize = $script:cursorSize }
     }
     'setAssetDir' {
@@ -1797,55 +1797,55 @@ function Invoke-Request($req) {
         $dir = Join-Path $PSScriptRoot 'assets\cursors'
       }
       Load-OverlayAssets $dir $req.overrides
-      [DshOverlay]::SetStyle($script:cursorStyle)
-      [DshOverlay]::SetSize($script:cursorSize)
+      [WandOverlay]::SetStyle($script:cursorStyle)
+      [WandOverlay]::SetSize($script:cursorSize)
       return @{ ok = $true; dir = $dir; cursorStyle = $script:cursorStyle }
     }
     'setCursorStyle' {
       $s = ([string]$req.style).ToLower()
       if ($script:styleNames -contains $s) { $script:cursorStyle = $s }
-      [DshOverlay]::SetStyle($script:cursorStyle)
+      [WandOverlay]::SetStyle($script:cursorStyle)
       return @{ ok = $true; cursorStyle = $script:cursorStyle; styles = $script:styleNames }
     }
     'simulateUserInput' {
-      [DshInput]::SimulateUserInput()
+      [WandInput]::SimulateUserInput()
       return Get-StatusResult
     }
     'debug' {
-      $h = [DshOverlay]::HandleId()
+      $h = [WandOverlay]::HandleId()
       $hr = @(0, 0, 0, 0)
       $vis = $false
       $ex = 0
       if ($h -ne 0) {
-        $hr = [DshInput]::WindowRect([IntPtr]$h)
-        $vis = [DshInput]::IsWindowVisible([IntPtr]$h)
-        $ex = [DshInput]::WindowExStyle([IntPtr]$h)
+        $hr = [WandInput]::WindowRect([IntPtr]$h)
+        $vis = [WandInput]::IsWindowVisible([IntPtr]$h)
+        $ex = [WandInput]::WindowExStyle([IntPtr]$h)
       }
       return @{
         hwnd = $h
         visible = $vis
         rect = $hr
-        bounds = [DshOverlay]::Bounds()
+        bounds = [WandOverlay]::Bounds()
         exStyle = ('0x{0:X}' -f $ex)
-        style = if ($h -ne 0) { '0x{0:X}' -f ([long][DshInput]::GetWindowLongPtrW([IntPtr]$h, -16)) } else { '0x0' }
-        parent = if ($h -ne 0) { [long][DshInput]::GetParent([IntPtr]$h) } else { 0 }
-        root = if ($h -ne 0) { [long][DshInput]::RootOf([IntPtr]$h) } else { 0 }
+        style = if ($h -ne 0) { '0x{0:X}' -f ([long][WandInput]::GetWindowLongPtrW([IntPtr]$h, -16)) } else { '0x0' }
+        parent = if ($h -ne 0) { [long][WandInput]::GetParent([IntPtr]$h) } else { 0 }
+        root = if ($h -ne 0) { [long][WandInput]::RootOf([IntPtr]$h) } else { 0 }
         topmost = (($ex -band 0x8) -ne 0)
         transparent = (($ex -band 0x20) -ne 0)
         noactivate = (($ex -band 0x08000000) -ne 0)
         toolwindow = (($ex -band 0x80) -ne 0)
-        setWindowPosOk = [DshOverlay]::LastSetWindowPosOk
-        setWindowPosError = [DshOverlay]::LastSetWindowPosError
+        setWindowPosOk = [WandOverlay]::LastSetWindowPosOk
+        setWindowPosError = [WandOverlay]::LastSetWindowPosError
       }
     }
     'windows' { return @{ windows = (Get-WindowsList) } }
     'windowAt' {
-      $h = [DshInput]::WindowAt([int]$req.x, [int]$req.y)
+      $h = [WandInput]::WindowAt([int]$req.x, [int]$req.y)
       return @{
         hwnd = [long]$h
-        title = [DshInput]::WindowTitle($h)
-        className = [DshInput]::WindowClass($h)
-        root = [long][DshInput]::RootOf($h)
+        title = [WandInput]::WindowTitle($h)
+        className = [WandInput]::WindowClass($h)
+        root = [long][WandInput]::RootOf($h)
       }
     }
     'uiaInfo' {
@@ -1862,19 +1862,19 @@ function Invoke-Request($req) {
     }
     'winInfo' {
       $h = [IntPtr][long]$req.hwnd
-      $r = [DshInput]::WindowRect($h)
+      $r = [WandInput]::WindowRect($h)
       return @{
         hwnd = [long]$h
-        title = [DshInput]::WindowTitle($h)
-        className = [DshInput]::WindowClass($h)
-        visible = [DshInput]::IsWindowVisible($h)
-        iconic = [DshInput]::IsIconic($h)
+        title = [WandInput]::WindowTitle($h)
+        className = [WandInput]::WindowClass($h)
+        visible = [WandInput]::IsWindowVisible($h)
+        iconic = [WandInput]::IsIconic($h)
         rect = @{ x = $r[0]; y = $r[1]; w = $r[2]; h = $r[3] }
-        foreground = ([long][DshInput]::GetForegroundWindow() -eq [long]$h)
+        foreground = ([long][WandInput]::GetForegroundWindow() -eq [long]$h)
       }
     }
     'setUserActiveMs' {
-      [DshInput]::SetUserActiveMs([int]$req.ms)
+      [WandInput]::SetUserActiveMs([int]$req.ms)
       return Get-StatusResult
     }
     'move' {
@@ -1884,9 +1884,9 @@ function Invoke-Request($req) {
       return @{ ok = $true; via = 'overlay'; x = $x; y = $y; note = '只移动 AI 光标，没有移动主人的真实光标' }
     }
     'overlay' {
-      if ($req.show -eq $false) { [DshOverlay]::Hide(); return @{ ok = $true; visible = $false; cursorMode = $script:cursorMode; cursorState = $script:cursorStyle } }
-      $x = if ($null -ne $req.x) { [int]$req.x } elseif ([DshOverlay]::HasLast) { [DshOverlay]::LastX } else { [DshInput]::CursorPos()[0] }
-      $y = if ($null -ne $req.y) { [int]$req.y } elseif ([DshOverlay]::HasLast) { [DshOverlay]::LastY } else { [DshInput]::CursorPos()[1] }
+      if ($req.show -eq $false) { [WandOverlay]::Hide(); return @{ ok = $true; visible = $false; cursorMode = $script:cursorMode; cursorState = $script:cursorStyle } }
+      $x = if ($null -ne $req.x) { [int]$req.x } elseif ([WandOverlay]::HasLast) { [WandOverlay]::LastX } else { [WandInput]::CursorPos()[0] }
+      $y = if ($null -ne $req.y) { [int]$req.y } elseif ([WandOverlay]::HasLast) { [WandOverlay]::LastY } else { [WandInput]::CursorPos()[1] }
       $st = $script:cursorStyle
       if ($null -ne $req.style) {
         $cand = ([string]$req.style).ToLower()
@@ -1897,15 +1897,15 @@ function Invoke-Request($req) {
       return @{ ok = $true; visible = $true; x = $x; y = $y; cursorMode = $script:cursorMode; cursorSize = $script:cursorSize; cursorState = $script:cursorStyle }
     }
     'pause' {
-      [DshInput]::Pause('api')
-      if ([DshOverlay]::HasLast) { [DshOverlay]::ShowAt([DshOverlay]::LastX, [DshOverlay]::LastY) }
+      [WandInput]::Pause('api')
+      if ([WandOverlay]::HasLast) { [WandOverlay]::ShowAt([WandOverlay]::LastX, [WandOverlay]::LastY) }
       return Get-StatusResult
     }
     'resume' {
-      [DshInput]::Resume()
+      [WandInput]::Resume()
       $script:cursorStyle = 'pointer'
-      [DshOverlay]::SetStyle('pointer')
-      if ([DshOverlay]::HasLast) { [DshOverlay]::ShowAt([DshOverlay]::LastX, [DshOverlay]::LastY) }
+      [WandOverlay]::SetStyle('pointer')
+      if ([WandOverlay]::HasLast) { [WandOverlay]::ShowAt([WandOverlay]::LastX, [WandOverlay]::LastY) }
       return Get-StatusResult
     }
     'click' {
@@ -1916,7 +1916,7 @@ function Invoke-Request($req) {
       $mode = if ($req.mode) { [string]$req.mode } else { 'auto' }
       $paused = Get-PausedResult
       if ($null -ne $paused) { return $paused }
-      [DshOverlay]::Hide()
+      [WandOverlay]::Hide()
 
       if ($mode -eq 'physical') {
         return @{
@@ -1933,16 +1933,16 @@ function Invoke-Request($req) {
         }
       }
       $target = [IntPtr]$targetHwnd
-      if (-not [DshInput]::IsWindow($target)) {
+      if (-not [WandInput]::IsWindow($target)) {
         return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd }
       }
-      $root = [DshInput]::RootOf($target)
-      $h = [DshInput]::ChildAt($root, $x, $y)
+      $root = [WandInput]::RootOf($target)
+      $h = [WandInput]::ChildAt($root, $x, $y)
       if ($h -eq [IntPtr]::Zero) { $h = $root }
-      $cls0 = [DshInput]::WindowClass($h)
+      $cls0 = [WandInput]::WindowClass($h)
       if ($button -eq 'left' -and $count -eq 1 -and $cls0 -match 'BUTTON|Button') {
         # BM_CLICK 直接让按钮发命令，不经过鼠标消息，也不抢焦点。
-        [DshInput]::PostMessage($h, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+        [WandInput]::PostMessage($h, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
         Show-StateAt 'link' $x $y
         return @{ ok = $true; via = 'bm_click'; hwnd = [long]$h; target = [long]$root; verified = $false; note = '按钮 BM_CLICK；不移动鼠标、不抢焦点' }
       }
@@ -1957,10 +1957,10 @@ function Invoke-Request($req) {
         $r['count'] = $count
         return $r
       }
-      $h = [DshInput]::ChildAt($root, $x, $y)
+      $h = [WandInput]::ChildAt($root, $x, $y)
       if ($h -eq [IntPtr]::Zero) { $h = $root }
-      [DshInput]::PostMouseClick($h, $x, $y, ($button -eq 'right'), $count)
-      $cls = [DshInput]::WindowClass($h)
+      [WandInput]::PostMouseClick($h, $x, $y, ($button -eq 'right'), $count)
+      $cls = [WandInput]::WindowClass($h)
       $state2 = 'pointer'
       if ($cls -match 'BUTTON|Button|SysLink|Toolbar|Menu') { $state2 = 'link' }
       elseif ($cls -match 'EDIT|Edit|TextBox') { $state2 = 'text' }
@@ -1994,10 +1994,10 @@ function Invoke-Request($req) {
       }
 
       if ($mode -eq 'message' -or $mode -eq 'auto' -or $mode -eq 'uia') {
-        $h = [DshInput]::WindowAt($x, $y)
+        $h = [WandInput]::WindowAt($x, $y)
         if ($h -ne [IntPtr]::Zero) {
-          [DshInput]::PostMouseClick($h, $x, $y, ($button -eq 'right'), $count)
-          $cls = [DshInput]::WindowClass($h)
+          [WandInput]::PostMouseClick($h, $x, $y, ($button -eq 'right'), $count)
+          $cls = [WandInput]::WindowClass($h)
           if ($fallbackState -eq 'pointer') {
             if ($cls -match 'BUTTON|Button|SysLink|Toolbar|Menu') { $fallbackState = 'link' }
             elseif ($cls -match 'EDIT|Edit|TextBox') { $fallbackState = 'text' }
@@ -2005,7 +2005,7 @@ function Invoke-Request($req) {
           Show-StateAt $fallbackState $x $y
           return @{
             ok = $true; via = 'message'; hwnd = [long]$h
-            title = [DshInput]::WindowTitle($h)
+            title = [WandInput]::WindowTitle($h)
             className = $cls
             verified = $false
             note = '窗口消息已投递，目标不一定处理；请截图确认'
@@ -2035,7 +2035,7 @@ function Invoke-Request($req) {
       $hasPoint = ($null -ne $req.x -and $null -ne $req.y)
       $paused = Get-PausedResult
       if ($null -ne $paused) { return $paused }
-      [DshOverlay]::Hide()
+      [WandOverlay]::Hide()
 
       if ($mode -eq 'physical') {
         return @{
@@ -2051,21 +2051,21 @@ function Invoke-Request($req) {
         }
       }
       $target = [IntPtr]$targetHwnd
-      if (-not [DshInput]::IsWindow($target)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
-      $root = [DshInput]::RootOf($target)
+      if (-not [WandInput]::IsWindow($target)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
+      $root = [WandInput]::RootOf($target)
       $h = $root
       if ($hasPoint) {
-        $child = [DshInput]::ChildAt($root, [int]$req.x, [int]$req.y)
+        $child = [WandInput]::ChildAt($root, [int]$req.x, [int]$req.y)
         if ($child -ne [IntPtr]::Zero) { $h = $child }
       }
 
-      $cls = [DshInput]::WindowClass($h)
+      $cls = [WandInput]::WindowClass($h)
       if ($cls -match 'EDIT|Edit|TextBox') {
-        $cur = [DshInput]::GetWindowText($h)
+        $cur = [WandInput]::GetWindowText($h)
         $want = if ($replace) { $text } else { $cur + $text }
-        [DshInput]::SetTextMessage($h, $want) | Out-Null
+        [WandInput]::SetTextMessage($h, $want) | Out-Null
         Start-Sleep -Milliseconds 60
-        $now = [DshInput]::GetWindowText($h)
+        $now = [WandInput]::GetWindowText($h)
         if ($now -eq $want) {
           if ($hasPoint) { Show-StateAt 'text' ([int]$req.x) ([int]$req.y) }
           return @{ ok = $true; via = 'wm_settext'; hwnd = [long]$h; target = [long]$root; verified = $true; note = '直接写入目标 Edit 控件，未抢焦点、未移动鼠标' }
@@ -2080,7 +2080,7 @@ function Invoke-Request($req) {
         return $r
       }
 
-      [DshInput]::PostText($h, $text)
+      [WandInput]::PostText($h, $text)
       if ($hasPoint) { Show-StateAt 'text' ([int]$req.x) ([int]$req.y) }
       return @{ ok = $true; via = 'message-hwnd'; hwnd = [long]$h; target = [long]$root; verified = $false; note = '已向目标窗口投递文字；不抢焦点' }
     }
@@ -2108,12 +2108,12 @@ function Invoke-Request($req) {
         }
       }
       $h = [IntPtr]$targetHwnd
-      if (-not [DshInput]::IsWindow($h)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
-      foreach ($vk in $vks) { [DshInput]::PostKey($h, [int]$vk, $true, $false, $false) }
+      if (-not [WandInput]::IsWindow($h)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
+      foreach ($vk in $vks) { [WandInput]::PostKey($h, [int]$vk, $true, $false, $false) }
       [Array]::Reverse($vks)
-      foreach ($vk in $vks) { [DshInput]::PostKey($h, [int]$vk, $false, $false, $false) }
+      foreach ($vk in $vks) { [WandInput]::PostKey($h, [int]$vk, $false, $false, $false) }
       $script:cursorStyle = 'text'
-      [DshOverlay]::SetStyle('text')
+      [WandOverlay]::SetStyle('text')
       return @{ ok = $true; via = 'message-hwnd'; hwnd = [long]$h; keys = $raw; verified = $false; note = '已向指定窗口投递按键；不抢焦点' }
     }
     'scroll' {
@@ -2123,7 +2123,7 @@ function Invoke-Request($req) {
       $mode = if ($req.mode) { [string]$req.mode } else { 'auto' }
       $paused = Get-PausedResult
       if ($null -ne $paused) { return $paused }
-      [DshOverlay]::Hide()
+      [WandOverlay]::Hide()
 
       if ($mode -eq 'physical') {
         return @{
@@ -2139,11 +2139,11 @@ function Invoke-Request($req) {
         }
       }
       $target = [IntPtr]$targetHwnd
-      if (-not [DshInput]::IsWindow($target)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
-      $root = [DshInput]::RootOf($target)
-      $h = [DshInput]::ChildAt($root, $x, $y)
+      if (-not [WandInput]::IsWindow($target)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
+      $root = [WandInput]::RootOf($target)
+      $h = [WandInput]::ChildAt($root, $x, $y)
       if ($h -eq [IntPtr]::Zero) { $h = $root }
-      [DshInput]::PostMouseScroll($h, $x, $y, $delta)
+      [WandInput]::PostMouseScroll($h, $x, $y, $delta)
       Show-StateAt 'vert' $x $y
       return @{ ok = $true; via = 'message-hwnd'; hwnd = [long]$h; target = [long]$root; delta = $delta; verified = $false; note = '已投递给指定窗口；不移动真实鼠标' }
     }
@@ -2163,7 +2163,7 @@ function Invoke-Request($req) {
                    else { 'move' }
       $paused = Get-PausedResult
       if ($null -ne $paused) { return $paused }
-      [DshOverlay]::Hide()
+      [WandOverlay]::Hide()
 
       if ($mode -eq 'physical') {
         return @{
@@ -2179,32 +2179,32 @@ function Invoke-Request($req) {
         }
       }
       $target = [IntPtr]$targetHwnd
-      if (-not [DshInput]::IsWindow($target)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
-      $root = [DshInput]::RootOf($target)
-      $h = [DshInput]::ChildAt($root, $x1, $y1)
+      if (-not [WandInput]::IsWindow($target)) { return @{ ok = $false; reason = 'target-hwnd-invalid'; hwnd = $targetHwnd } }
+      $root = [WandInput]::RootOf($target)
+      $h = [WandInput]::ChildAt($root, $x1, $y1)
       if ($h -eq [IntPtr]::Zero) { $h = $root }
-      [DshInput]::PostMouseDrag($h, $x1, $y1, $x2, $y2, [Math]::Max(8, [int]($duration / 20)))
+      [WandInput]::PostMouseDrag($h, $x1, $y1, $x2, $y2, [Math]::Max(8, [int]($duration / 20)))
       Show-StateAt $dragState $x2 $y2
       return @{ ok = $true; via = 'message-hwnd'; hwnd = [long]$h; target = [long]$root; verified = $false; note = '已投递给指定窗口；不移动真实鼠标' }
     }
     'capture' {
       $path = [string]$req.path
       if ([string]::IsNullOrWhiteSpace($path)) { throw 'path required' }
-      $wasVisible = [DshOverlay]::VisibleNow()
-      if ($wasVisible) { [DshOverlay]::Hide() }
+      $wasVisible = [WandOverlay]::VisibleNow()
+      if ($wasVisible) { [WandOverlay]::Hide() }
       try {
         $dir = [System.IO.Path]::GetDirectoryName($path)
         if (-not [string]::IsNullOrWhiteSpace($dir)) { [System.IO.Directory]::CreateDirectory($dir) | Out-Null }
         if ($req.rect) {
           $parts = ([string]$req.rect) -split ','
           $x = [int]$parts[0]; $y = [int]$parts[1]; $w = [int]$parts[2]; $h = [int]$parts[3]
-          [DshInput]::CapturePng($path, $x, $y, $w, $h) | Out-Null
+          [WandInput]::CapturePng($path, $x, $y, $w, $h) | Out-Null
         } else {
-          [DshInput]::CapturePng($path, 0, 0, 0, 0) | Out-Null
+          [WandInput]::CapturePng($path, 0, 0, 0, 0) | Out-Null
         }
       } finally {
-        if ($wasVisible -and [DshOverlay]::HasLast) {
-          [DshOverlay]::ShowAt([DshOverlay]::LastX, [DshOverlay]::LastY)
+        if ($wasVisible -and [WandOverlay]::HasLast) {
+          [WandOverlay]::ShowAt([WandOverlay]::LastX, [WandOverlay]::LastY)
         }
       }
       return @{ ok = $true; path = $path }
@@ -2217,13 +2217,13 @@ function Invoke-Request($req) {
       $s = 0
       if ($null -ne $req.size) { $s = [int]$req.size }
       if ($s -le 0) { $s = $script:cursorSize }
-      [DshInput]::CapturePng($path, [DshOverlay]::LastX, [DshOverlay]::LastY, $s, $s) | Out-Null
-      return @{ ok = $true; path = $path; x = [DshOverlay]::LastX; y = [DshOverlay]::LastY; size = $s }
+      [WandInput]::CapturePng($path, [WandOverlay]::LastX, [WandOverlay]::LastY, $s, $s) | Out-Null
+      return @{ ok = $true; path = $path; x = [WandOverlay]::LastX; y = [WandOverlay]::LastY; size = $s }
     }
     'shutdown' {
-      [DshOverlay]::Stop()
-      [DshInput]::StopHooks()
-      [DshInput]::StopHotkey()
+      [WandOverlay]::Stop()
+      [WandInput]::StopHooks()
+      [WandInput]::StopHotkey()
       return @{ ok = $true }
     }
     default { throw "unknown command: $cmd" }
@@ -2268,7 +2268,7 @@ function Load-OverlayAssets($dir, $overridesObj) {
     }
   }
 
-  [DshOverlay]::ConfigureStylesWithOverrides($dir, $ovDict, $fcDict, $ivDict)
+  [WandOverlay]::ConfigureStylesWithOverrides($dir, $ovDict, $fcDict, $ivDict)
 }
 
 # ---------------------------------------------------------------- main
@@ -2280,12 +2280,12 @@ if ($env:AZURE_WAND_CURSOR_OVERRIDES) {
 }
 try {
   Load-OverlayAssets $assetDir $initOverrides
-  [DshOverlay]::SetStyle($script:cursorStyle)
-  [DshOverlay]::SetMode($script:cursorMode, $script:cursorHoldMs)
-  [DshOverlay]::SetSize($script:cursorSize)
+  [WandOverlay]::SetStyle($script:cursorStyle)
+  [WandOverlay]::SetMode($script:cursorMode, $script:cursorHoldMs)
+  [WandOverlay]::SetSize($script:cursorSize)
 } catch { }
 
-[DshInput]::StartHotkey()
+[WandInput]::StartHotkey()
 $ready = @{
   event = 'ready'
   pid = $PID
@@ -2306,7 +2306,7 @@ while ($true) {
     $id = $req.id
     $result = Invoke-Request $req
     if ($result -is [hashtable]) {
-      $result['cursorState'] = if ([DshInput]::Paused) { 'unavailiable' } else { $script:cursorStyle }
+      $result['cursorState'] = if ([WandInput]::Paused) { 'unavailiable' } else { $script:cursorStyle }
     }
     $resp = @{ id = $id; ok = $true; result = $result }
   } catch {

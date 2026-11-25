@@ -161,7 +161,7 @@ export async function launchGecko({ executable, root, headless = true, keep = fa
   mkdirSync(profile, { recursive: true });
   // Keep the old lock path so earlier versions also see that this profile is in use.
   // A throwaway profile is already unique to the process that created it.
-  const release = keep ? await acquireProfileLock(path.join(profile, 'dsh-bidi-owner'), { timeoutMs: 0 }) : async () => {};
+  const release = keep ? await acquireProfileLock(path.join(profile, 'wand-bidi-owner'), { timeoutMs: 0 }) : async () => {};
   const args = ['-no-remote', '-new-instance', '-profile', profile, '-headless', '--remote-debugging-port', '0', 'about:blank'];
   let child;
   try {
@@ -292,7 +292,7 @@ export class BidiBrowserLane {
         // foreground is not verified yet. Settings turn 显示浏览器窗口 off for
         // Firefox, and health and list_windows report visible:false.
         this.owned = await launchGecko({ executable: this.executable.path,
-          root: this.env.WCU_BROWSER_PROFILE || path.join(this.env.LOCALAPPDATA || os.tmpdir(), 'dsh-computer-use-win', 'agent-browser'),
+          root: this.env.WCU_BROWSER_PROFILE || path.join(this.env.LOCALAPPDATA || os.tmpdir(), 'azure-wand', 'agent-browser'),
           headless: true, keep: this.env.WCU_BROWSER_SIGNIN === '1', trace: this.trace, env:this.env });
         endpoint = this.owned.endpoint;
       }
@@ -343,7 +343,7 @@ export class BidiBrowserLane {
   async call(tab, fn, args = [], sharedId, request) {
     assertBrowserUrl(tab.url || 'about:blank', {env:this.env, approvedFileUrl:tab.approvedFileUrl, grants:request?.approvalGrants, approved:request?.policyApproved===true});
     const declaration = wrappedBidiFn(fn);
-    const result = await this.connection.send('script.callFunction', { functionDeclaration: declaration, target: { context: tab.context, sandbox: 'dsh-bidi' },
+    const result = await this.connection.send('script.callFunction', { functionDeclaration: declaration, target: { context: tab.context, sandbox: 'wand-bidi' },
       awaitPromise: false, arguments: args.map(localValue), ...(sharedId ? { this: { sharedId } } : {}), serializationOptions: { maxObjectDepth: 8, maxDomDepth: 0 } });
     if (result.type === 'exception') {
       const message = result.exceptionDetails?.text || 'script exception';
@@ -448,7 +448,7 @@ export class BidiBrowserLane {
           if (button === undefined) fail('INVALID_ARGUMENTS', 'unknown mouse button');
           const actions = [{ type: 'pointerMove', x: 0, y: 0, origin: { type: 'element', element: { sharedId } } }];
           if (action !== 'move') for (let i = 0; i < (action === 'double_click' ? 2 : 1); i++) actions.push({ type: 'pointerDown', button }, { type: 'pointerUp', button });
-          await this.perform(tab, [{ type: 'pointer', id: 'dsh-pointer', parameters: { pointerType: 'mouse' }, actions }]);
+          await this.perform(tab, [{ type: 'pointer', id: 'wand-pointer', parameters: { pointerType: 'mouse' }, actions }]);
         } else if (action === 'focus') await this.call(tab, domElement, ['focus'], sharedId, request);
         else if (action === 'set_value') { detail.verifyValue = await this.call(tab, domElement, ['set', args.value], sharedId, request); detail.inputMethod = 'DOM setter and synthetic events'; }
         else if (action === 'type_text') {
@@ -456,9 +456,9 @@ export class BidiBrowserLane {
           if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\uE000-\uF8FF]/u.test(args.text)) fail('INVALID_ARGUMENTS', 'text contains control or WebDriver reserved Private Use Area characters');
           const focused = await this.call(tab, domFocused, [], undefined, request);
           const actions = Array.from(args.text).flatMap(value => [{ type: 'keyDown', value }, { type: 'keyUp', value }]);
-          if (actions.length) await this.perform(tab, [{ type: 'key', id: 'dsh-keyboard', actions }]);
+          if (actions.length) await this.perform(tab, [{ type: 'key', id: 'wand-keyboard', actions }]);
           if (!tab.dialog) detail.verifyValue = await this.call(tab, domElement, ['read'], focused.sharedId, request);
-        } else if (action === 'keypress') await this.perform(tab, [{ type: 'key', id: 'dsh-keyboard', actions: keyActions(args.keys) }]);
+        } else if (action === 'keypress') await this.perform(tab, [{ type: 'key', id: 'wand-keyboard', actions: keyActions(args.keys) }]);
         else if (action === 'scroll') {
           const dx = args.deltaX ?? 0, dy = args.deltaY ?? 480;
           if (![dx, dy].every(Number.isFinite)) fail('INVALID_ARGUMENTS', 'scroll deltas must be finite');

@@ -142,10 +142,10 @@ export class IndependentInputEngine {
         stdio: ["pipe", "pipe", "pipe"],
         env: {
           ...process.env,
-          DSH_INPUT_CURSOR_MODE: this.cursorMode,
-          DSH_INPUT_CURSOR_HOLD_MS: String(this.cursorHoldMs),
-          DSH_INPUT_CURSOR_SIZE: String(this.cursorSize),
-          DSH_INPUT_CURSOR_STYLE: this.cursorState,
+          AZURE_WAND_CURSOR_MODE: this.cursorMode,
+          AZURE_WAND_CURSOR_HOLD_MS: String(this.cursorHoldMs),
+          AZURE_WAND_CURSOR_SIZE: String(this.cursorSize),
+          AZURE_WAND_CURSOR_STYLE: this.cursorState,
           AZURE_WAND_CURSOR_DIR: this.assetDir,
           AZURE_WAND_CURSOR_OVERRIDES: JSON.stringify(this.stateOverrides || {})
         }

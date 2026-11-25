@@ -153,7 +153,7 @@ $archive = $null
 $taskName = 'Wincu-Guest-' + [Guid]::NewGuid().ToString('N')
 try {
   $vm = Get-SelectedVm
-  $credentialRoot = Join-Path $env:LOCALAPPDATA 'dsh-computer-use-win\hyperv'
+  $credentialRoot = Join-Path $env:LOCALAPPDATA 'azure-wand\hyperv'
   $credentialFile = Join-Path $credentialRoot ($vm.Id.ToString('D') + '.credential.xml')
   if ($Mode -eq 'Configure') {
     $credential = Get-Credential -Message "Sign in to the Windows guest $($vm.Name) for Wincu. Use the account already signed in inside this VM."
@@ -198,7 +198,7 @@ try {
     if (-not $node) { throw 'WCU_HYPERV_NODE_REQUIRED: install Node.js 22 or newer in the virtual machine.' }
     $version = (& $node --version | Select-Object -First 1)
     if ($version -notmatch '^v(\d+)\.' -or [int]$Matches[1] -lt 22) { throw 'WCU_HYPERV_NODE_REQUIRED: install Node.js 22 or newer in the virtual machine.' }
-    $folder = Join-Path $env:LOCALAPPDATA ('dsh-computer-use-win\hyperv-workers\' + $name)
+    $folder = Join-Path $env:LOCALAPPDATA ('azure-wand\hyperv-workers\' + $name)
     [void][IO.Directory]::CreateDirectory($folder)
     @{ root=$folder; node=$node; sessionId=$desktop[0]; userSid=$identity.User.Value }
   }
@@ -394,7 +394,7 @@ try {
           $folder = $scheduler.GetFolder('\')
           try { $folder.DeleteTask($name,0) } catch {}
           # Keep guest application data; remove only the worker created for this relay.
-          $directory = Join-Path $env:LOCALAPPDATA 'dsh-computer-use-win\hyperv-workers'
+          $directory = Join-Path $env:LOCALAPPDATA 'azure-wand\hyperv-workers'
           $owned = Get-Item -LiteralPath $root -Force -ErrorAction SilentlyContinue
           if ($owned -and $owned.PSIsContainer -and $name -match '^Wincu-Guest-[0-9a-f]{32}$' -and
               $owned.FullName -eq [IO.Path]::GetFullPath((Join-Path $directory $name)) -and

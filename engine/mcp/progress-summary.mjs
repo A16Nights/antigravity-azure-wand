@@ -13,7 +13,7 @@ const ENDED={done:'summaryDone',stopped:'summaryStopped',failed:'summaryFailed'}
 export const isEnded=progress=>Object.hasOwn(ENDED,progress?.status??'');
 
 // The model sees the step history (plain-language action names and the text
-// DSH already showed), never tool arguments, screenshots, user prompts or the
+// Antigravity already showed), never tool arguments, screenshots, user prompts or the
 // conversation. Oldest material is dropped first to stay within the bound.
 // Its labels are in the overlay's language, like the summary it asks for.
 export function summaryInput(progress,limit=SUMMARY_INPUT_CHARS,locale='zh'){

@@ -155,13 +155,13 @@ const webContentNote = " In a Chromium-based window (Electron, Chrome/Edge, CEF,
 const tools = [
   {
     name: "windows_computer_use_launch_app",
-    description: "Launch an executable, shortcut or installed application, on the user's desktop through the interactive Windows Shell or on DSH's hidden desktop (see desktop). The app outlives the tool call and MCP server and uses the desktop's environment. Requires Explorer. Argument-bearing and shortcut launches require approval or explicit standalone configuration. Known command interpreters and script hosts are refused with arguments; this is not a command sandbox. A successful result means dispatched; verify the intended window. Apps may activate themselves even with activate:false. Does not request elevation.",
+    description: "Launch an executable, shortcut or installed application, on the user's desktop through the interactive Windows Shell or on Antigravity's hidden desktop (see desktop). The app outlives the tool call and MCP server and uses the desktop's environment. Requires Explorer. Argument-bearing and shortcut launches require approval or explicit standalone configuration. Known command interpreters and script hosts are refused with arguments; this is not a command sandbox. A successful result means dispatched; verify the intended window. Apps may activate themselves even with activate:false. Does not request elevation.",
     inputSchema: { type: "object", additionalProperties: false, required: ["target"], properties: {
       target: { type: "string", minLength: 1, maxLength: 32767, description: "Absolute .exe/.com/.lnk path, executable name on PATH/App Paths, exact installed app name or AppUserModelID." },
       arguments: { type: "string", maxLength: 32767, default: "", description: "Windows command-line arguments for the executable or shortcut; quote individual arguments containing spaces. Not a shell command, and refused for command interpreters and script hosts." },
       workingDirectory: { type: "string", maxLength: 32767, default: "", description: "Existing absolute working directory. Not supported for AppUserModelID launches." },
       activate: { type: "boolean", default: false },
-      desktop: { type: "string", enum: ["background", "current"], description: "Where the app opens. background: DSH's hidden desktop in this Windows session, apart from the user's screen, pointer and keyboard; its windows take UI Automation and window-message actions only, and list_windows marks them desktop:'background'. current: the user's desktop, needed for real pointer or keyboard input, shortcuts and installed or Store apps. Default: background under the Low disruption work mode when the target is an executable, else current." },
+      desktop: { type: "string", enum: ["background", "current"], description: "Where the app opens. background: Antigravity's hidden desktop in this Windows session, apart from the user's screen, pointer and keyboard; its windows take UI Automation and window-message actions only, and list_windows marks them desktop:'background'. current: the user's desktop, needed for real pointer or keyboard input, shortcuts and installed or Store apps. Default: background under the Low disruption work mode when the target is an executable, else current." },
       waitMs: { type: "integer", minimum: 0, maximum: 10000, default: 1500 }
     } }
   },
@@ -387,7 +387,7 @@ const tools = [
   },
   {
     name: "windows_computer_use_keypress",
-    description: "Press a key or key chord, such as Ctrl+L, Enter, Alt+F4, or Shift+Tab. The Windows key is blocked by design. The keys go to the target window, else the window DSH last worked in this turn, else the window in front; it comes forward for them and then gives the foreground back, unless a menu or dialog they opened is showing. The result's deliveredTo names the window and its focused control that received the keys. dispatch:'background' supports only a single printable character (posted as WM_CHAR to the focused control of the target window, no foreground steal); chords and functional keys must use dispatch:'foreground' (SendInput). With browserTab, the key goes to that page inside the browser: Alt+Left/Alt+Right/F5 go back/forward/reload, Enter/Escape answer an open JavaScript dialog, and browser-window shortcuts such as Ctrl+L or Ctrl+T are refused.",
+    description: "Press a key or key chord, such as Ctrl+L, Enter, Alt+F4, or Shift+Tab. The Windows key is blocked by design. The keys go to the target window, else the window Antigravity last worked in this turn, else the window in front; it comes forward for them and then gives the foreground back, unless a menu or dialog they opened is showing. The result's deliveredTo names the window and its focused control that received the keys. dispatch:'background' supports only a single printable character (posted as WM_CHAR to the focused control of the target window, no foreground steal); chords and functional keys must use dispatch:'foreground' (SendInput). With browserTab, the key goes to that page inside the browser: Alt+Left/Alt+Right/F5 go back/forward/reload, Enter/Escape answer an open JavaScript dialog, and browser-window shortcuts such as Ctrl+L or Ctrl+T are refused.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -438,7 +438,7 @@ const tools = [
   },
   {
     name: "windows_computer_use_set_value",
-    description: "Set a value in the background (EM_REPLACESEL on a Win32 edit, else the UI Automation ValuePattern), or focus and type as fallback. Whether the keyboard focus moves to the element depends on the app (Chromium moves it, a Win32 edit keeps it where it was): when a key must follow in that field, such as Enter in a search box, call focus on the element first. Browser lane: a page element id fills that field, selects that option or sets that checkbox inside the page; <tab>:address (for example t1a2b:address) navigates the tab to a web address; new-tab opens the address in a background tab, in a separate DSH browser without sign-ins or, when the user turned on sign-ins, in their own browser; <browser>:new-tab opens it in that connected browser.",
+    description: "Set a value in the background (EM_REPLACESEL on a Win32 edit, else the UI Automation ValuePattern), or focus and type as fallback. Whether the keyboard focus moves to the element depends on the app (Chromium moves it, a Win32 edit keeps it where it was): when a key must follow in that field, such as Enter in a search box, call focus on the element first. Browser lane: a page element id fills that field, selects that option or sets that checkbox inside the page; <tab>:address (for example t1a2b:address) navigates the tab to a web address; new-tab opens the address in a background tab, in a separate Antigravity browser without sign-ins or, when the user turned on sign-ins, in their own browser; <browser>:new-tab opens it in that connected browser.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -597,7 +597,7 @@ const concisePropertyDescriptions = {
   windowTitle: 'Title substring.', processId: 'Target PID.', nativeWindowHandle: 'Target HWND.',
   includeInvisible: 'Also list hidden windows.',
   activate: 'Bring forward and keep on top.',
-  desktop: 'background = DSH hidden desktop (no real input); current = user desktop.',
+  desktop: 'background = Antigravity hidden desktop (no real input); current = user desktop.',
   viewMode: 'UIA view (runtime IDs bypass filter).',
   includeOffscreen: 'Include offscreen nodes.', detailLevel: 'compact omits empty/heavy fields.',
   treeTimeoutMs: 'UIA budget ms.',
@@ -647,7 +647,7 @@ const initialNames = toolMode === 'lazy' ? [discoveryName] : configuredSelection
 const enabledTools = new Set(initialNames);
 // Models infer what a server can do from the names of its tools. A Lazy startup
 // advertises the management entry alone, so no capability name is left to infer
-// from. MCP instructions are the channel for that statement: DSH publishes them
+// from. MCP instructions are the channel for that statement: Antigravity publishes them
 // as a system-prompt section attributed to this server.
 const capabilityInstructions = 'Windows Computer Use reads and operates Windows apps (window lists, UI Automation, screenshots, OCR, input, window management). Tools start unloaded: call windows_computer_use_tools with operation "enable" and needed names (or ["*"] for all allowed tools), or "describe" for full arguments. Prefer UIA elements over screen coordinates, then observe again to verify. Chromium browser pages also run in background via browserTab (listed under browserLane in list_windows).';
 // A Custom checklist that allows no desktop tool must not claim the capability:
@@ -658,7 +658,7 @@ const routingInstructions = browserRoutingInstructions(process.env.WCU_SETTINGS_
 const desktopInstructions = allowedTools.has(prefix+'keypress') ? '\n\nExcel: select an exact range with Ctrl+G and enter its address in the observed Go To dialog, not a worksheet cell or formula bar. For Ribbon key tips use one keypress with keys and thenKeys, e.g. keys:["alt","h"], thenKeys:[["o"],["w"]] opens Column Width without returning focus between chords; type a value such as the width only after the dialog is observed, since keys sent while a key tip did not engage land in the cell. Prefer numeric column widths or AutoFit to dragging boundaries. For long text, set bounded widths, enable Wrap Text in Format Cells > Alignment, then AutoFit Row Height; inspect the saved result.' : '';
 const serverInstructions = [...allowedTools].some(name => name !== discoveryName)
   ? (managementOnly ? capabilityInstructions + '\n\n' : '') + routingInstructions + desktopInstructions : undefined;
-// Saved settings the DSH adapter reset to their defaults (dsh-plugin.mjs)
+// Saved settings the Antigravity adapter reset to their defaults (host-adapter.mjs)
 // surface in health and the tools list (#39).
 let adapterNotices = null;
 try { adapterNotices = process.env.WCU_ADAPTER_NOTICES ? JSON.parse(process.env.WCU_ADAPTER_NOTICES) : null; } catch {}
@@ -757,10 +757,10 @@ function validateArguments(schema, value, location = "arguments") {
   return value;
 }
 
-// DSH hosts can retain/serialize raw MCP image blocks even when their text
+// Antigravity hosts can retain/serialize raw MCP image blocks even when their text
 // preview says "content discarded". Its adapter requests file mode so no
 // binary payload reaches the tool result. Standalone MCP keeps inline images.
-const BROWSER_SHOT_DIR = path.join(os.tmpdir(), 'dsh-wcu-browser-screenshots');
+const BROWSER_SHOT_DIR = path.join(os.tmpdir(), 'azure-wand-browser-screenshots');
 const UUID_PNG_RE = /^[a-f0-9-]{36}\.png$/;
 let browserShotDirReady = false;
 
@@ -768,7 +768,7 @@ async function screenshotOutput(screenshot, includeImage = true) {
   if (!screenshot) return { metadata: screenshot, content: [] };
   const { base64, ...metadata } = screenshot;
   // The backend saves desktop captures under the Windows TEMP. Under WSL,
-  // DSH's file tools read them through /mnt (#79).
+  // Antigravity's file tools read them through /mnt (#79).
   if (IN_WSL && metadata.path) metadata.path = linuxPath(metadata.path);
   if (process.env.WCU_IMAGE_MODE === 'file') {
     if (includeImage && !metadata.path) {
@@ -803,8 +803,8 @@ async function screenshotOutput(screenshot, includeImage = true) {
 // one-shot action -> ~8-50ms hot). If the backend wedges or dies it is
 // killed and respawned lazily on the next call.
 // ----------------------------------------------------------------------------
-// The backend on the user's desktop, and one on DSH's hidden desktop, where Low
-// disruption opens the apps DSH starts. Each call goes to the backend whose
+// The backend on the user's desktop, and one on Antigravity's hidden desktop, where Low
+// disruption opens the apps Antigravity starts. Each call goes to the backend whose
 // desktop holds its window (deskFor).
 const backends = { current: null, background: null };
 let backendNextId = 0;
@@ -823,17 +823,17 @@ const takeover = new TakeoverControl({ powershell, config: process.env.WCU_SETTI
 const browserEnv = backgroundDesktop ? {
   ...process.env, WCU_BROWSER_ATTACH_USER: '0', WCU_BROWSER_CDP_URL: undefined, WCU_BROWSER_BIDI_URL: undefined,
   WCU_BROWSER_PROFILE: path.join(process.env.WCU_BROWSER_PROFILE ||
-    path.join(process.env.LOCALAPPDATA || os.homedir(), 'dsh-computer-use-win', 'agent-browser'), 'background-desktop'),
+    path.join(process.env.LOCALAPPDATA || os.homedir(), 'azure-wand', 'agent-browser'), 'background-desktop'),
 } : process.env;
 const browserLane = new BrowserLane({ env: browserEnv });
-// A tab DSH works in keeps its badge until the host ends the operation series.
+// A tab Antigravity works in keeps its badge until the host ends the operation series.
 const userStopped = () => takeover.paused && takeover.pauseMessage === STOPPED;
 browserLane.seriesActive = () => takeover.seriesHeld && !userStopped();
 
 // Browser-lane calls work inside the page in the background; the user keeps
 // the pointer, the keyboard and the foreground. They take a quiet lease: it
 // honours a stopped series and holds settings reconnects, but shows no screen
-// indicator and arms no global Esc. DSH's stop button cancels them.
+// indicator and arms no global Esc. Antigravity's stop button cancels them.
 async function runBrowser(action, args, request) {
   let acquired = false;
   const prepared = takeoverSetup.then(async () => {
@@ -919,7 +919,7 @@ function failBackendWaiters(error, proc) {
 }
 
 // The backend never runs Node, and programs that launch_app starts on the local
-// background desktop inherit its environment. DSH sets ELECTRON_RUN_AS_NODE for
+// background desktop inherit its environment. Antigravity sets ELECTRON_RUN_AS_NODE for
 // this server; passed on, it makes an Electron app such as VS Code run as Node
 // with no window.
 const BACKEND_PRIVATE_ENV = new Set(['WCU_APPROVAL_SECRET', 'WCU_APPROVAL_LEDGER', 'ELECTRON_RUN_AS_NODE']);
@@ -1042,7 +1042,7 @@ function killBackends(error) {
   for (const proc of Object.values(backends)) if (proc) killBackend(error, proc);
 }
 
-// DSH's hidden desktop. Inside DSH the adapter owns it (dsh-plugin.mjs), so the
+// Antigravity's hidden desktop. Inside Antigravity the adapter owns it (host-adapter.mjs), so the
 // apps on it outlive an MCP restart: this server asks for it with a request
 // file and reads its name from WCU_BACKGROUND_FILE. A server started on its own
 // owns one itself, which closes when the server exits. A server that already
@@ -1076,10 +1076,10 @@ async function hiddenDesktopName(request) {
     if (state?.name) return state.name;
     if (state?.error && state.at >= requested) throw new Error(String(state.error));
   }
-  throw new Error('WCU_BACKGROUND_DESKTOP_UNAVAILABLE: DSH did not open its hidden desktop within 20 s.');
+  throw new Error('WCU_BACKGROUND_DESKTOP_UNAVAILABLE: Antigravity did not open its hidden desktop within 20 s.');
 }
 async function ensureHiddenBackend(request) {
-  if (!hiddenDesktopSupported) throw new Error('WCU_BACKGROUND_DESKTOP_UNAVAILABLE: the hidden desktop needs a native Windows DSH host.');
+  if (!hiddenDesktopSupported) throw new Error('WCU_BACKGROUND_DESKTOP_UNAVAILABLE: the hidden desktop needs a native Windows Antigravity host.');
   const live = backends.background;
   if (live && retiringBackends.has(live)) throw new Error("COMPUTER_USE_STOPPING");
   if (live && live.exitCode === null) return live;
@@ -1089,7 +1089,7 @@ async function ensureHiddenBackend(request) {
 
 // The user's work mode, read live from settings: quiet (Low disruption, the
 // default) or fast (Foreground). Inside a Hyper-V guest the whole machine is
-// DSH's, so it works as Foreground there. A server started without DSH's
+// Antigravity's, so it works as Foreground there. A server started without Antigravity's
 // settings keeps the behaviour of earlier versions (direct): the foreground
 // as the agent asks, no wait for the user, apps on the user's desktop.
 const startupSettings = (() => { try { return JSON.parse(process.env.WCU_SETTINGS_JSON || '{}'); } catch { return {}; } })();
@@ -1132,7 +1132,7 @@ async function waitForSafeMoment(request, args = {}) {
     const waited = Date.now() - started;
     if (!held && !fullscreen && !composing) return waited;
     if (held && waited >= HELD_LIMIT_MS) throw new Error(`WCU_USER_INPUT_HELD: The user has held a key or mouse button for ${HELD_LIMIT_MS / 1000} s, so nothing was sent. Try again in a moment, or use an element action, which needs neither.`);
-    if (fullscreen && waited >= FULLSCREEN_LIMIT_MS) throw new Error('WCU_USER_FULLSCREEN: The user is in a full-screen app or presenting, so DSH did not borrow the mouse and keyboard and nothing was sent. Element actions still work; try real input again later.');
+    if (fullscreen && waited >= FULLSCREEN_LIMIT_MS) throw new Error('WCU_USER_FULLSCREEN: The user is in a full-screen app or presenting, so Antigravity did not borrow the mouse and keyboard and nothing was sent. Element actions still work; try real input again later.');
     if (composing && waited >= COMPOSING_LIMIT_MS) return waited;
     await new Promise(resolve => setTimeout(resolve, fullscreen ? 500 : 60));
   }
@@ -1172,7 +1172,7 @@ let takeoverSetup = Promise.resolve();
 // Windows delivers real pointer and keyboard input to the desktop on screen.
 const HIDDEN_LIMIT = backgroundDesktop
   ? 'WCU_BACKGROUND_DESKTOP_LIMIT: This desktop takes UI Automation and window-message actions only. Real pointer and keyboard input and full-screen capture need the user\'s desktop.'
-  : 'WCU_BACKGROUND_DESKTOP_LIMIT: This window is on DSH\'s hidden desktop, which takes UI Automation and window-message actions only (element ids, set_value, invoke, type_text, dispatch:"background", window screenshots). Real pointer and keyboard input and full-screen capture cannot reach it; for those, close the app and launch it again with desktop:"current".';
+  : 'WCU_BACKGROUND_DESKTOP_LIMIT: This window is on Antigravity\'s hidden desktop, which takes UI Automation and window-message actions only (element ids, set_value, invoke, type_text, dispatch:"background", window screenshots). Real pointer and keyboard input and full-screen capture cannot reach it; for those, close the app and launch it again with desktop:"current".';
 async function runBackend(action, args = {}, timeoutMs = 30000, request) { return runBackendOn(undefined, action, args, timeoutMs, request); }
 // runBackend with the desktop chosen by the caller (else by deskFor).
 async function runBackendOn(desk, action, args = {}, timeoutMs = 30000, request) {
@@ -1284,7 +1284,7 @@ function validateTargetArgs(args) {
   const nativeKeys = nativeTargetKeys.filter(key => args[key] !== undefined);
   const opener = NEW_TAB.exec(args.elementId ?? '');
   if (typeof args.elementId === 'string' && args.elementId.endsWith(':new-tab') && !opener)
-    throw new Error('INVALID_ARGUMENTS: use set_value with elementId "new-tab" and value "<url>" to start the DSH browser. A prefixed new-tab requires an actual connected browser id from list_windows.');
+    throw new Error('INVALID_ARGUMENTS: use set_value with elementId "new-tab" and value "<url>" to start the Antigravity browser. A prefixed new-tab requires an actual connected browser id from list_windows.');
   if (args.browserTab === 'desktop') {
     if (browser) throw new Error('INVALID_ARGUMENTS: desktop fallback cannot use page element ids. Use a fresh desktop snapshot with the Windows target first.');
     if (!args.windowTitle?.trim() && !args.processId && !args.nativeWindowHandle)
@@ -1293,7 +1293,7 @@ function validateTargetArgs(args) {
     return target;
   }
   if (opener && (nativeKeys.length || args.browserTab !== undefined))
-    throw new Error('INVALID_ARGUMENTS: opening a browser tab uses only set_value elementId and value. Use elementId "new-tab" for the DSH browser. Omit browserTab, windowTitle, processId and nativeWindowHandle.');
+    throw new Error('INVALID_ARGUMENTS: opening a browser tab uses only set_value elementId and value. Use elementId "new-tab" for the Antigravity browser. Omit browserTab, windowTitle, processId and nativeWindowHandle.');
   if (browser && nativeKeys.length)
     throw new Error(`INVALID_ARGUMENTS: mixed browser and Windows targets (${nativeKeys.join(', ')}). For a page use its browserTab or page element id alone. For desktop fallback keep the Windows target, omit browserTab and use fresh desktop element ids or coordinates.`);
   if (args.browserTab !== undefined && !args.browserTab.trim())
@@ -1346,13 +1346,13 @@ async function callTool(name, args, request) {
       return observationText("tree", args, request);
     case "windows_computer_use_list_windows": {
       const result = await runBackend("list_windows", args, undefined, request);
-      // Windows on DSH's hidden desktop follow the user's, marked as such.
+      // Windows on Antigravity's hidden desktop follow the user's, marked as such.
       if (hiddenDesktopKnown()) {
         try {
           const hidden = await runBackendOn('background', "list_windows", args, undefined, request);
           const windows = (hidden.windows ?? []).map(window => ({ ...window, desktop: 'background' }));
           result.windows = [...(result.windows ?? []), ...windows];
-          if (windows.length) result.hiddenDesktop = 'Windows marked desktop:"background" are on DSH\'s hidden desktop, apart from the user\'s screen. Target them by nativeWindowHandle; they take UI Automation and window-message actions, not real pointer or keyboard input.';
+          if (windows.length) result.hiddenDesktop = 'Windows marked desktop:"background" are on Antigravity\'s hidden desktop, apart from the user\'s screen. Target them by nativeWindowHandle; they take UI Automation and window-message actions, not real pointer or keyboard input.';
         } catch (error) { result.hiddenDesktopError = error.message; }
       }
       try { await browserLane.annotateWindows(result); } catch (error) { result.browserLane = { error: error.message }; }
@@ -1655,7 +1655,7 @@ async function runBatch(args, request) {
 }
 
 const inputActions = INPUT_ACTIONS;
-// Under Low disruption an executable opens on DSH's hidden desktop. A shortcut,
+// Under Low disruption an executable opens on Antigravity's hidden desktop. A shortcut,
 // an installed or Store app, or a program that desktop cannot start opens on
 // the user's desktop instead, not while the user holds a key or composes text,
 // unless the agent chose the desktop.
@@ -1669,7 +1669,7 @@ async function launchApp(args, request) {
       const opened = result.observedNewWindows?.[0];
       if (opened) rememberWindow('background', opened.nativeWindowHandle);
       result.desktop = 'background';
-      result.note = 'Opened on DSH\'s hidden desktop, apart from the user\'s screen, pointer and keyboard. Target its windows by nativeWindowHandle (list_windows marks them desktop:"background"); they take UI Automation and window-message actions only. An app that reused an instance already open on the user\'s desktop shows its window there instead.';
+      result.note = 'Opened on Antigravity\'s hidden desktop, apart from the user\'s screen, pointer and keyboard. Target its windows by nativeWindowHandle (list_windows marks them desktop:"background"); they take UI Automation and window-message actions only. An app that reused an instance already open on the user\'s desktop shows its window there instead.';
       return imageResult(result, false);
     } catch (error) {
       if (desktop || !/^WCU_BACKGROUND_DESKTOP_(?:LIMIT|UNAVAILABLE)\b/.test(error.message)) throw error;
@@ -1682,11 +1682,11 @@ async function launchApp(args, request) {
 async function backendText(action, args, timeoutMs, request, desk) {
   const result = desk ? await runBackendOn(desk, action, args, timeoutMs, request) : await runBackend(action, args, timeoutMs, request);
   if (inputActions.has(action)) {
-    // Keys and text without a window target, before DSH has worked in any
+    // Keys and text without a window target, before Antigravity has worked in any
     // window this turn, reach whatever window is in front (issue #82).
     const guessed = result.deliveredTo?.via === "front window";
     result.verification = guessed || result.moved === false || result.posted === false || result.activated === false ? "unconfirmed" : result.verification ?? "sent";
-    result.verificationNote = guessed ? "No window target was given and DSH had not worked in a window this turn, so this went to the window in front (deliveredTo). If another window was meant, pass its nativeWindowHandle and check that window."
+    result.verificationNote = guessed ? "No window target was given and Antigravity had not worked in a window this turn, so this went to the window in front (deliveredTo). If another window was meant, pass its nativeWindowHandle and check that window."
       : result.verification === "observed" ? result.note ?? "The focused edit contained the expected text after input."
       : result.verification === "sent" ? "The action was dispatched. Use wait_for or a fresh observation to verify the expected effect."
       : result.note ?? "Windows did not confirm dispatch. Inspect the warning and observe the target before retrying.";
@@ -1907,7 +1907,7 @@ function shutdown(code) {
 
 function maybeExitAfterStdinEnd() {
   if (stdinEnded && pendingRequests === 0) {
-    // A kept-profile DSH browser closes itself first, saving its last cookies.
+    // A kept-profile Antigravity browser closes itself first, saving its last cookies.
     void shutdown(0);
   }
 }

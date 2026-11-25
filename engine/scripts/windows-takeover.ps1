@@ -23,7 +23,7 @@ try {
     Add-Type -AssemblyName System.Web.Extensions
     Add-Type -TypeDefinition $source -ReferencedAssemblies System.Windows.Forms,System.Drawing,System.Web.Extensions,System.Core
   }
-  [DshTakeover.Host]::Run($CancelEvent, [bool]$TestMode)
+  [WandTakeover.Host]::Run($CancelEvent, [bool]$TestMode)
 } catch {
   [Console]::Error.WriteLine($_.Exception.ToString())
   exit 1

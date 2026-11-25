@@ -20,7 +20,7 @@ function Write-BackendStage {
 }
 
 # ============================================================================
-# Win Computer Use — Windows desktop engine for the dsh-computer-use-win MCP server
+# Win Computer Use — Windows desktop engine for the azure-wand MCP server
 #
 # Modes:
 #   -One-shot:  windows-uia.ps1 -Action <name>        (args: JSON on stdin)
@@ -678,7 +678,7 @@ public static class WindowsComputerUseNative {
 // a step without waiting for the user to stop. Meanwhile the user's own keys
 // and mouse actions are held here and replayed to the user's window once the
 // foreground and pointer are back, so nothing they type is lost or lands in
-// DSH's window. Afterwards, while a window DSH worked in stays in front (a
+// Antigravity's window. Afterwards, while a window Antigravity worked in stays in front (a
 // menu, list or dialog it opened, an app it started), the user's next key
 // first gives the foreground back to their window and is replayed there; a
 // click of theirs ends that. Esc always passes on to the stop listener. When
@@ -707,9 +707,9 @@ public static class WcuInputHold {
     }
     // A key (LLKHF flags: 0x01 extended, 0x02 injected at a lower integrity,
     // 0x10 injected). down: Windows reads the key as down already. In
-    // Guarding, dshInFront: a window DSH worked in is in front and the user's
+    // Guarding, wandInFront: a window Antigravity worked in is in front and the user's
     // window is there to go back to. True: swallow the key.
-    public bool Key(int vk, int scan, int flags, ulong extra, bool up, bool down, bool dshInFront, bool overdue) {
+    public bool Key(int vk, int scan, int flags, ulong extra, bool up, bool down, bool wandInFront, bool overdue) {
       bool injected = (flags & 0x10) != 0;
       if (injected && extra == (ulong)ReplayMarker) { if (up) Replaying.Remove(vk); else Replaying.Add(vk); return false; }
       if (Ours(injected, (flags & 0x02) != 0, extra)) return false;
@@ -728,7 +728,7 @@ public static class WcuInputHold {
         Keys.Add(vk); KeyCount++; Add(vk, scan, flags, false); return true;
       }
       if (State == Guarding) {
-        if (up || vk == 0x1B || !dshInFront) return false;
+        if (up || vk == 0x1B || !wandInFront) return false;
         State = Returning; Keys.Clear(); Keys.Add(vk); KeyCount = 1; Add(vk, scan, flags, false); return true;
       }
       if (State == Returning) {
@@ -812,9 +812,9 @@ public static class WcuInputHold {
   public static readonly Core Decisions = new Core();
   static readonly object gate = new object();
   static IntPtr user, pendingUser;
-  static System.Collections.Generic.HashSet<long> dshWindows = new System.Collections.Generic.HashSet<long>();
+  static System.Collections.Generic.HashSet<long> wandWindows = new System.Collections.Generic.HashSet<long>();
   static System.Collections.Generic.HashSet<long> before = new System.Collections.Generic.HashSet<long>(), pendingBefore;
-  static System.Collections.Generic.HashSet<uint> dshProcesses = new System.Collections.Generic.HashSet<uint>();
+  static System.Collections.Generic.HashSet<uint> wandProcesses = new System.Collections.Generic.HashSet<uint>();
   static DateTime since, guardUntil;
   static string notice;
   public const string GuardNote = "This window stays in front for now; if the user types before your next step, the foreground goes back to their window first.";
@@ -834,8 +834,8 @@ public static class WcuInputHold {
     return state;
   }
 
-  // Before DSH's input on the user's desktop: hold the user's input from now
-  // on. target: the window DSH works in (0: the one in front). False when the
+  // Before Antigravity's input on the user's desktop: hold the user's input from now
+  // on. target: the window Antigravity works in (0: the one in front). False when the
   // hooks are not there; the step then runs without this protection.
   public static bool Begin(long target) {
     var windows = TopLevelSet();
@@ -849,11 +849,11 @@ public static class WcuInputHold {
           // Coming from a guard, the user's window is still the one from before.
           if (Decisions.State != Guarding) {
             user = WindowsComputerUseNative.GetForegroundWindow(); before = windows;
-            dshWindows = new System.Collections.Generic.HashSet<long>(); dshProcesses = new System.Collections.Generic.HashSet<uint>();
+            wandWindows = new System.Collections.Generic.HashSet<long>(); wandProcesses = new System.Collections.Generic.HashSet<uint>();
           }
           Decisions.Reset(cursor.x, cursor.y);
-          if (target != 0) dshWindows.Add(target);
-          if (pid != 0) dshProcesses.Add(pid);
+          if (target != 0) wandWindows.Add(target);
+          if (pid != 0) wandProcesses.Add(pid);
           since = DateTime.UtcNow;
           Decisions.State = Holding;
           break;
@@ -883,14 +883,14 @@ public static class WcuInputHold {
     return true;
   }
 
-  // After DSH's input, with the foreground and pointer given back: replay what
-  // the user did meanwhile. windows: what DSH worked in (the target and the
+  // After Antigravity's input, with the foreground and pointer given back: replay what
+  // the user did meanwhile. windows: what Antigravity worked in (the target and the
   // menus, lists and dialogs it opened). A note for the result, or null.
   public static string End(long[] windows) {
     IntPtr target; bool hasKeys = false; int keys, mouse;
     lock (gate) {
       if (Decisions.State != Holding) return null;
-      if (windows != null) foreach (long window in windows) if (window != 0) dshWindows.Add(window);
+      if (windows != null) foreach (long window in windows) if (window != 0) wandWindows.Add(window);
       if (Decisions.Keys.Count > 0) hasKeys = true;
       foreach (Held held in Decisions.Queue) if (held.Key) hasKeys = true;
       keys = Decisions.KeyCount; mouse = Decisions.MouseCount; target = user;
@@ -899,21 +899,21 @@ public static class WcuInputHold {
     bool there = Present(target), returned = false, deliver = true, elevated = false, guard;
     if (hasKeys && front != target) { returned = there && GiveBack(target); deliver = returned; }
     // Windows lets no program type into a window that runs at a higher
-    // integrity level (an app run as administrator while DSH is not).
+    // integrity level (an app run as administrator while Antigravity is not).
     if (hasKeys && deliver && there) {
       uint pid; WindowsComputerUseNative.GetWindowThreadProcessId(target, out pid);
       var identity = pid == 0 ? null : WindowsComputerUseNative.ReadInputProcess(pid, false);
       uint? own = WindowsComputerUseNative.ReadCurrentIntegrity();
       if (identity != null && identity.Integrity.HasValue && own.HasValue && identity.Integrity.Value > own.Value) { deliver = false; elevated = true; }
     }
-    lock (gate) guard = !hasKeys && there && front != target && IsDsh(front);
+    lock (gate) guard = !hasKeys && there && front != target && IsWandTarget(front);
     int dropped = Drain(deliver, Holding, guard ? Guarding : Idle);
     int x, y; bool moved;
     lock (gate) { moved = Decisions.Moved; x = Decisions.X; y = Decisions.Y; guardUntil = DateTime.UtcNow.AddMinutes(10); }
     if (moved) Place(x, y);
     if (!guard) Request(UninstallMessage, false);
     var parts = new System.Collections.Generic.List<string>();
-    if (elevated) parts.Add("The user typed during this step in a window that runs as administrator; Windows lets DSH replay no keys there, so they were dropped.");
+    if (elevated) parts.Add("The user typed during this step in a window that runs as administrator; Windows lets Antigravity replay no keys there, so they were dropped.");
     else if (returned) parts.Add("The user was typing, so the foreground went back to their window and their keys went there; a menu or list this step opened may have closed.");
     else if (dropped > 0) parts.Add("The user typed during this step, but Windows kept this window in front, so their keys were dropped rather than sent here.");
     else if (keys + mouse > 0) parts.Add("The user's own input during this step was held and then replayed to their window.");
@@ -922,7 +922,7 @@ public static class WcuInputHold {
   }
 
   // Before an action that may bring a window forward without real input (an
-  // app DSH starts, activate_window, an element action whose app comes forward).
+  // app Antigravity starts, activate_window, an element action whose app comes forward).
   public static void Snapshot() {
     var windows = TopLevelSet();
     IntPtr front = WindowsComputerUseNative.GetForegroundWindow();
@@ -931,16 +931,16 @@ public static class WcuInputHold {
       else if (Decisions.State == Idle) { pendingUser = front; pendingBefore = windows; }
     }
   }
-  // After it: until the user clicks, DSH's next input step or ten minutes, a
+  // After it: until the user clicks, Antigravity's next input step or ten minutes, a
   // key the user types while one of these windows, or a new window of these
   // processes, is in front goes to the user's own window instead.
   public static bool ArmGuard(long[] windows, long[] processes) {
     lock (gate) {
       if (pendingUser == IntPtr.Zero || (Decisions.State != Idle && Decisions.State != Guarding)) return false;
-      if (Decisions.State == Idle) { dshWindows = new System.Collections.Generic.HashSet<long>(); dshProcesses = new System.Collections.Generic.HashSet<uint>(); }
+      if (Decisions.State == Idle) { wandWindows = new System.Collections.Generic.HashSet<long>(); wandProcesses = new System.Collections.Generic.HashSet<uint>(); }
       user = pendingUser; before = pendingBefore ?? new System.Collections.Generic.HashSet<long>(); pendingUser = IntPtr.Zero;
-      if (windows != null) foreach (long window in windows) if (window != 0) dshWindows.Add(window);
-      if (processes != null) foreach (long process in processes) if (process > 0) dshProcesses.Add((uint)process);
+      if (windows != null) foreach (long window in windows) if (window != 0) wandWindows.Add(window);
+      if (processes != null) foreach (long process in processes) if (process > 0) wandProcesses.Add((uint)process);
       Decisions.Reset(0, 0); Decisions.State = Guarding; guardUntil = DateTime.UtcNow.AddMinutes(10);
     }
     if (Request(InstallMessage, false)) return true;
@@ -968,17 +968,17 @@ public static class WcuInputHold {
     foreach (IntPtr window in WindowsComputerUseNative.TopLevelWindows()) set.Add(window.ToInt64());
     return set;
   }
-  // Under gate. A window DSH worked in, one of them owns, or a new window of
-  // the processes DSH worked in.
-  static bool IsDsh(IntPtr window) {
+  // Under gate. A window Antigravity worked in, one of them owns, or a new window of
+  // the processes Antigravity worked in.
+  static bool IsWandTarget(IntPtr window) {
     if (window == IntPtr.Zero) return false;
     IntPtr owner = window;
     for (int depth = 0; owner != IntPtr.Zero && depth < 8; depth++) {
-      if (dshWindows.Contains(owner.ToInt64())) return true;
+      if (wandWindows.Contains(owner.ToInt64())) return true;
       owner = WindowsComputerUseNative.GetWindow(owner, 4);
     }
     uint pid; WindowsComputerUseNative.GetWindowThreadProcessId(window, out pid);
-    return pid != 0 && dshProcesses.Contains(pid) && !before.Contains(window.ToInt64());
+    return pid != 0 && wandProcesses.Contains(pid) && !before.Contains(window.ToInt64());
   }
   static bool Overdue() { return (DateTime.UtcNow - since).TotalMilliseconds > 8000; }
 
@@ -1017,8 +1017,8 @@ public static class WcuInputHold {
     bool returned = Present(target) && GiveBack(target);
     Drain(returned, Returning, Idle);
     lock (gate) notice = returned
-      ? "Since your last step the user typed while a window DSH worked in was in front, so the foreground went back to their window and their keys went there. Observe again before acting in that window."
-      : "Since your last step the user typed while a window DSH worked in was in front; Windows did not give their window the foreground, so those keys were dropped.";
+      ? "Since your last step the user typed while a window Antigravity worked in was in front, so the foreground went back to their window and their keys went there. Observe again before acting in that window."
+      : "Since your last step the user typed while a window Antigravity worked in was in front; Windows did not give their window the foreground, so those keys were dropped.";
     Request(UninstallMessage, false);
   }
 
@@ -1069,7 +1069,7 @@ public static class WcuInputHold {
       if (thread == null || !thread.IsAlive) {
         threadId = 0;
         thread = new System.Threading.Thread(Pump);
-        thread.IsBackground = true; thread.Name = "DSH input hold"; thread.Start();
+        thread.IsBackground = true; thread.Name = "Antigravity input hold"; thread.Start();
         DateTime start = DateTime.UtcNow;
         while (threadId == 0 && (DateTime.UtcNow - start).TotalMilliseconds < 2000) System.Threading.Monitor.Wait(pump, 100);
         if (threadId == 0) return false;
@@ -1098,15 +1098,15 @@ public static class WcuInputHold {
       bool down = !up && (GetAsyncKeyState((int)data.vk) & 0x8000) != 0;
       lock (gate) {
         int was = Decisions.State;
-        bool dshInFront = false;
+        bool wandInFront = false;
         if (was == Guarding && !up) {
           if (DateTime.UtcNow > guardUntil) Decisions.State = Idle;
           else {
             IntPtr front = WindowsComputerUseNative.GetForegroundWindow();
-            dshInFront = front != user && Present(user) && IsDsh(front);
+            wandInFront = front != user && Present(user) && IsWandTarget(front);
           }
         }
-        swallow = Decisions.Key((int)data.vk, (int)data.scan, (int)data.flags, data.extra.ToUInt64(), up, down, dshInFront, was == Holding && Overdue());
+        swallow = Decisions.Key((int)data.vk, (int)data.scan, (int)data.flags, data.extra.ToUInt64(), up, down, wandInFront, was == Holding && Overdue());
         returning = was == Guarding && Decisions.State == Returning;
         ended = was == Guarding && Decisions.State == Idle;
       }
@@ -1179,7 +1179,7 @@ function Get-HelperCacheDir {
     if (-not [IO.Path]::IsPathRooted($configured)) { throw 'The configured TEMP path must be absolute.' }
     $dir = [IO.Path]::GetFullPath($configured)
   } else {
-    $dir = Join-Path $local 'dsh-computer-use-win\native-cache'
+    $dir = Join-Path $local 'azure-wand\native-cache'
     if (-not [IO.Directory]::Exists($dir)) {
       $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
       try {
@@ -1248,7 +1248,7 @@ function Import-HelperAssembly {
   $directory = [IO.Path]::GetDirectoryName($Path)
   Assert-PrivateHelperPath $directory -Directory
   $digestFile = $Path + '.sha256'
-  $mutex = [Threading.Mutex]::new($false, ('Local\DSH-WCU-Helper-' + (Get-CsHash $Path.ToUpperInvariant())))
+  $mutex = [Threading.Mutex]::new($false, ('Local\AzureWand-Helper-' + (Get-CsHash $Path.ToUpperInvariant())))
   $owned = $false
   $partial = $Path -replace '\.dll$', (".$PID." + [Guid]::NewGuid().ToString('N') + '.dll')
   try {
@@ -1610,14 +1610,14 @@ function Assert-InputProcess {
   [void][int]::TryParse([string]$env:WCU_HOST_PID,[ref]$hostProcess)
   if ($ProcessId -eq $PID -or ($hostProcess -gt 0 -and $ProcessId -eq $hostProcess) -or
       ($script:TakeoverProcessId -gt 0 -and $ProcessId -eq $script:TakeoverProcessId)) {
-    throw 'HOST_INPUT_DENIED: desktop input cannot target the DSH host or computer-use helper.'
+    throw 'HOST_INPUT_DENIED: desktop input cannot target the Antigravity host or computer-use helper.'
   }
   $checkImage = [bool]$env:WCU_HOST_EXECUTABLE
   $target = [WindowsComputerUseNative]::ReadInputProcess([uint32]$ProcessId, $checkImage)
   if ($target.Gone) { throw 'INPUT_TARGET_UNAVAILABLE: the target process has exited. No input was sent.' }
   if ($checkImage -and $target.ImagePath -and
       [string]::Equals([IO.Path]::GetFullPath($target.ImagePath),[IO.Path]::GetFullPath($env:WCU_HOST_EXECUTABLE),[StringComparison]::OrdinalIgnoreCase)) {
-    throw 'HOST_INPUT_DENIED: desktop input cannot target a DSH host executable window.'
+    throw 'HOST_INPUT_DENIED: desktop input cannot target a Antigravity host executable window.'
   }
   $currentIntegrity = [WindowsComputerUseNative]::ReadCurrentIntegrity()
   if ($null -ne $target.Integrity -and $null -ne $currentIntegrity -and $target.Integrity -gt $currentIntegrity) {
@@ -1684,7 +1684,7 @@ function Assert-ElementFocus {
 #    window the user had in front gets the foreground back. The target stays
 #    in front while a menu, a drop-down or a dialog the action opened shows,
 #    when the user switched windows meanwhile, and with activate:true.
-# Input without a window target goes to the window DSH gave input to last in
+# Input without a window target goes to the window Antigravity gave input to last in
 # this operation series, never into the window the user got back.
 # ============================================================================
 $script:InputWindow = @{ series = $null; hwnd = [int64]0; at = 0 }
@@ -1725,10 +1725,10 @@ function Get-ElementWindow {
   return [int64]0
 }
 
-# The window DSH works in: the window it gave input to last in this series
+# The window Antigravity works in: the window it gave input to last in this series
 # (within two minutes when no series is known), while that window is still
 # open; else the window in front. After the foreground went back to the user,
-# input and observations without a window target keep to DSH's window.
+# input and observations without a window target keep to Antigravity's window.
 function Get-WorkWindow {
   $last = $script:InputWindow
   $now = [DateTimeOffset]::Now.ToUnixTimeMilliseconds()
@@ -1746,7 +1746,7 @@ function Set-WorkWindow {
 }
 
 # The window that input for this call goes to: the requested target, else the
-# window DSH works in. $script:InputWindowVia says which, so a result can tell
+# window Antigravity works in. $script:InputWindowVia says which, so a result can tell
 # when the keys went to whatever window happened to be in front.
 function Resolve-InputWindow {
   param([object]$InputObject)
@@ -1757,7 +1757,7 @@ function Resolve-InputWindow {
     $script:InputWindowVia = 'window target'
   } else {
     $hwnd=Get-WorkWindow
-    $script:InputWindowVia = if ($script:InputWindow.hwnd -and $hwnd -eq [int64]$script:InputWindow.hwnd) { 'last DSH window' } else { 'front window' }
+    $script:InputWindowVia = if ($script:InputWindow.hwnd -and $hwnd -eq [int64]$script:InputWindow.hwnd) { 'last Antigravity window' } else { 'front window' }
   }
   Assert-NativeInputTarget $hwnd
   return $hwnd
@@ -1800,7 +1800,7 @@ function Start-Input {
 }
 
 # The end of a hold: replays what the user did meanwhile (WcuInputHold::End).
-# $Windows: what DSH worked in. Returns the note for the result, or $null.
+# $Windows: what Antigravity worked in. Returns the note for the result, or $null.
 function Stop-InputHold {
   param([long[]]$Windows = @())
   $script:WcuHolding = $false
@@ -1809,7 +1809,7 @@ function Stop-InputHold {
 
 # Real input lands on whatever shows at the point. With the target in front,
 # the point must show the target or a window of its process (its menu, list or
-# dialog); otherwise nothing is sent. WindowFromPoint skips the DSH indicator,
+# dialog); otherwise nothing is sent. WindowFromPoint skips the Antigravity indicator,
 # which is layered and click-through.
 function Assert-PointOnTarget {
   param([int]$X, [int]$Y, [long]$Target, [hashtable]$State = $null)
@@ -1830,7 +1830,7 @@ function Complete-Input {
   try { Complete-BorrowedInput $State $Result }
   finally {
     if ($script:WcuHolding) {
-      # What DSH worked in: the target and the menus, lists and dialogs it opened.
+      # What Antigravity worked in: the target and the menus, lists and dialogs it opened.
       $windows = @()
       if ($State.target) { $windows += [int64]$State.target }
       if ($State.procId) { $windows += @([WindowsComputerUseNative]::VisiblePopups([uint32]$State.procId) | Where-Object { $State.popups -notcontains $_ }) }
@@ -1840,7 +1840,7 @@ function Complete-Input {
   }
 }
 
-# Put the pointer back if it is still where DSH left it, and give the
+# Put the pointer back if it is still where Antigravity left it, and give the
 # foreground back (see the section note). Adds pointer/foreground to the
 # result, saying what was done.
 function Complete-BorrowedInput {
@@ -2177,7 +2177,7 @@ $script:FailsafeFirstSeen = 0
 function Test-Failsafe {
   # Quiet actions are cancelled by the host's request/series state. They do not
   # arm the global stop listener; requiring its event here rejects the very
-  # first background UIA/BM_CLICK/EM_REPLACESEL call in a real DSH session.
+  # first background UIA/BM_CLICK/EM_REPLACESEL call in a real Antigravity session.
   # Assert-InputAllowed refuses physical input until the host upgrades the lease.
   if ($env:WCU_CANCEL_EVENT -and -not $script:WcuQuiet) { [WindowsComputerUseNative]::ThrowIfCancelled() }
   # Returns $true when an input action is ALLOWED. Throws when the failsafe
@@ -3647,7 +3647,7 @@ function Capture-Screenshot {
 }
 
 function Get-ObservationWindow {
-  # Without a window target: the window DSH works in (see Get-WorkWindow), or
+  # Without a window target: the window Antigravity works in (see Get-WorkWindow), or
   # with -Foreground the window actually in front.
   param([object]$InputObject, [string]$Scope = "active_window", [switch]$Foreground)
   if ($Scope -eq "desktop") { return $null }
@@ -4029,7 +4029,7 @@ function Invoke-LaunchApp {
   if ($resolved.kind -eq 'installed-app' -and ($arguments -or $directory)) { throw 'LAUNCH_INVALID_ARGUMENTS: AppUserModelID launches do not accept arguments or workingDirectory.' }
   # Command interpreters and script hosts run whatever their arguments say, so
   # with arguments launch_app would be a command channel the user never sees.
-  # They start only without arguments; commands belong to DSH's own shell tool.
+  # They start only without arguments; commands belong to Antigravity's own shell tool.
   # A shortcut is judged by the program it starts.
   if ($resolved.kind -eq 'file') {
     $program = $resolved.target
@@ -4053,7 +4053,7 @@ function Invoke-LaunchApp {
     if ($effectiveArguments.Trim() -and -not $approved) { throw 'WCU_APPROVAL_REQUIRED: launching with arguments requires host approval or explicit standalone configuration.' }
     $commandHosts = @('cmd', 'powershell', 'pwsh', 'wt', 'wsl', 'bash', 'sh', 'conhost', 'wscript', 'cscript', 'mshta', 'rundll32', 'regsvr32', 'msiexec', 'forfiles', 'schtasks', 'pcalua', 'ftp', 'python', 'pythonw', 'node', 'deno', 'bun', 'perl', 'ruby', 'php')
     $name = ([IO.Path]::GetFileNameWithoutExtension($program.TrimEnd('.', ' '))).ToLowerInvariant()
-    if ($effectiveArguments.Trim() -and $name -in $commandHosts) { throw "LAUNCH_COMMAND_REFUSED: $name runs the commands in its arguments. launch_app starts command interpreters and script hosts only without arguments; run commands with DSH's own shell tool." }
+    if ($effectiveArguments.Trim() -and $name -in $commandHosts) { throw "LAUNCH_COMMAND_REFUSED: $name runs the commands in its arguments. launch_app starts command interpreters and script hosts only without arguments; run commands with Antigravity's own shell tool." }
   }
   $waitMs = [int](Get-Prop $InputObject 'waitMs' 1500)
   if ($waitMs -lt 0 -or $waitMs -gt 10000) { throw 'LAUNCH_INVALID_ARGUMENTS: waitMs must be 0-10000.' }
@@ -4112,7 +4112,7 @@ function Invoke-LaunchApp {
 
 function Get-DesktopInputMutexName {
   $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-  return "Local\DSH-WCU-Input-v1-$sid"
+  return "Local\AzureWand-Input-v1-$sid"
 }
 
 function Enter-DesktopInput {
@@ -4159,7 +4159,7 @@ function Invoke-Action {
   $script:WcuSeries = Get-Prop $inputObject '_wcuSeries' $null
   $background = $env:WCU_BACKGROUND_DESKTOP -eq '1'
   # Low disruption on the user's desktop: real input holds the user's own
-  # input and replays it afterwards, and a window DSH leaves in front is
+  # input and replays it afterwards, and a window Antigravity leaves in front is
   # guarded (WcuInputHold).
   $script:WcuLowDisruption = [bool](Get-Prop $inputObject '_wcuLowDisruption' $false) -and -not $background
   $script:WcuHolding = $false
@@ -4228,8 +4228,8 @@ function Invoke-Action {
       $treeResult = Get-TreeResult -Scope $scope -MaxDepth $maxDepth -MaxNodes $maxNodes -InputObject $inputObject
       if ($includeScreenshot) {
         $winEl = $null
-        # The window DSH works in may be behind the user's window: then the
-        # screen shows the user's window, so capture DSH's window itself.
+        # The window Antigravity works in may be behind the user's window: then the
+        # screen shows the user's window, so capture Antigravity's window itself.
         $behind = $scope -ne 'desktop' -and -not (Has-WindowTarget $inputObject) -and (Get-WorkWindow) -ne [WindowsComputerUseNative]::GetForegroundWindow().ToInt64()
         if (($captureWindow -or $behind -or $background) -and $treeResult.targetResponsive -ne $false) {
           $winEl = Get-ObservationWindow $inputObject $scope

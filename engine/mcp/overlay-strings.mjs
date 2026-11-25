@@ -46,7 +46,7 @@ const zh = {
     move: ['移动鼠标'], drag: ['拖动'], scroll: ['滚动页面', '滚动窗口'], type_text: ['输入文字'], keypress: ['按键'], focus: ['切换焦点'],
     invoke: ['操作控件'], activate_window: ['切换到窗口'], wait: ['等待'], ocr: ['识别屏幕文字'], screenshot: ['截图查看页面', '截图查看屏幕'],
     wait_for: ['等待页面变化', '等待界面变化'], close_window: ['关闭窗口'], move_window: ['移动窗口'], launch_app: ['打开应用或网页'],
-    // DSH's own tools that often run inside a computer-use turn.
+    // Antigravity's own tools that often run inside a computer-use turn.
     read_image: ['查看截图'], web_search: ['搜索网页'], web_fetch: ['读取网页']
   },
   batch: '连续执行 {0} 个操作',
@@ -248,7 +248,7 @@ const ru = {
 const freeze = table => Object.freeze({ ...table, labels: Object.freeze(Object.fromEntries(Object.entries(table.labels).map(([key, value]) => [key, Object.freeze([...value])]))) });
 export const OVERLAY_STRINGS = Object.freeze({ zh: freeze(zh), en: freeze(en), ru: freeze(ru) });
 
-// A BCP 47 tag from DSH or the system picks a shipped dictionary by its
+// A BCP 47 tag from Antigravity or the system picks a shipped dictionary by its
 // language ("zh-CN" reads Chinese); anything else reads English.
 export function overlayLocale(tag) {
   const language = String(tag ?? '').trim().toLowerCase().split(/[-_]/)[0];
@@ -256,8 +256,8 @@ export function overlayLocale(tag) {
 }
 export const overlayStrings = locale => OVERLAY_STRINGS[overlayLocale(locale)];
 // The language Node itself runs in. On Windows it is the regional format,
-// which is also what DSH Desktop's Chromium starts with (--lang) when the user
-// has not chosen a DSH language.
+// which is also what Antigravity Desktop's Chromium starts with (--lang) when the user
+// has not chosen a Antigravity language.
 export function systemLocale() {
   try { return Intl.DateTimeFormat().resolvedOptions().locale || 'en'; } catch { return 'en'; }
 }

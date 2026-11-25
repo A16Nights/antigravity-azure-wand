@@ -9,7 +9,7 @@ export function isDesktopTool(name=''){
 
 export const ACTIVITY_IDLE_MS=30000;
 // After a turn ends the overlay keeps its last state this long, so the user
-// can read the result without raising the DSH window.
+// can read the result without raising the Antigravity window.
 export const PROGRESS_LINGER_MS=20000;
 // Bounded history: the most recent steps, older steps keep only the tail of
 // their text, the current step keeps more.
@@ -62,19 +62,19 @@ export function actionLabel(name,args={},locale='zh'){
   return label.length>1&&!args.browserTab?label[1]:label[0];
 }
 
-// DSH's stop button aborts a call with a plain object ({kind:'user'}), and its
+// Antigravity's stop button aborts a call with a plain object ({kind:'user'}), and its
 // MCP client passes that object on as the error, so the agent would read
 // "Error: [object Object]". Say what happened instead.
 export function readableAbort(exec,result){
   if(!result?.isError||!exec.signal?.aborted||result.error?.message!=='[object Object]')return result;
   const message=exec.signal.reason?.kind==='user'
-    ?'COMPUTER_USE_STOPPED_IN_DSH: Stopped with the DSH stop button. Do not retry in this turn; a new user turn or continue request can use the desktop again.'
-    :'COMPUTER_USE_CANCELLED: DSH cancelled this call before completion.';
+    ?'COMPUTER_USE_STOPPED_BY_HOST: Stopped with the Antigravity stop button. Do not retry in this turn; a new user turn or continue request can use the desktop again.'
+    :'COMPUTER_USE_CANCELLED: Antigravity cancelled this call before completion.';
   return {...result,content:[{type:'text',text:'Error: '+message}],error:{...result.error,message}};
 }
 
 const newProgress=(startedAt=Date.now())=>({status:'waiting',step:0,tool:'',action:'',reasoning:'',reply:'',steps:[],startedAt});
-// One entry per model step: the actions it took and the text DSH showed for it.
+// One entry per model step: the actions it took and the text Antigravity showed for it.
 function stepEntry(progress,step){
   let entry=progress.steps.at(-1);
   if(entry?.step===step)return entry;
@@ -91,7 +91,7 @@ function addAction(progress,label){
 
 // The host knows turn boundaries; the stdio worker only knows individual calls.
 // Keep this lease outside the worker so tool-list reloads preserve the series.
-// getLocale gives the DSH interface language; the overlay, its step names and
+// getLocale gives the Antigravity interface language; the overlay, its step names and
 // its AI summary use it (#74). An idle publisher writes nothing, so the caller
 // asks for a write with refresh() when the language changes or before a
 // preview opens; otherwise the preview kept the language of the last series.
@@ -141,7 +141,7 @@ export function installActivity(ctx,file,{idleMs=ACTIVITY_IDLE_MS,lingerMs=PROGR
     const session=exec.agent?.session;
     const turn=exec.agent?.phase?.kind==='running'?exec.agent.phase.turn:undefined;
     if(!isDesktopTool(exec.name)){
-      // Another DSH tool inside a computer-use turn gets a line in the step
+      // Another Antigravity tool inside a computer-use turn gets a line in the step
       // history when it has a plain-language name; nothing else changes.
       const label=owner&&session?.id===owner.id&&turn===owner.turn?actionLabel(exec.name,callArguments(exec.arguments),locale()):'';
       if(!label)return next();
@@ -191,7 +191,7 @@ export function installActivity(ctx,file,{idleMs=ACTIVITY_IDLE_MS,lingerMs=PROGR
     const chunk=event.type==='assistant/chunk'?event.data.chunk:undefined;
     if(chunk)acceptText(session.id,turn,step,chunk);
   },{global:true});
-  // DSH streams the model's output as agent/assistant-stream frames: a start
+  // Antigravity streams the model's output as agent/assistant-stream frames: a start
   // frame names the turn and step of one model attempt, its chunk frames carry
   // the text, and an abandoned attempt is retried from the start.
   const attempts=new Map(),retried=new Set();

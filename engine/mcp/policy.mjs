@@ -190,7 +190,7 @@ export function isBlockedRuntimeRequestUrl(value, env = process.env, options) {
   if (local) {
     const {ports, pending} = readHostPorts(env);
     if (pending) throw Error('WCU_POLICY_UNAVAILABLE: host address policy is starting.');
-    if (ports.includes(effectivePort)) return {blocked: true, reason: 'WCU_POLICY_DENIED: this address belongs to the DSH host.'};
+    if (ports.includes(effectivePort)) return {blocked: true, reason: 'WCU_POLICY_DENIED: this address belongs to the Antigravity host.'};
   }
   return {blocked: false};
 }
@@ -281,7 +281,7 @@ export function classifyOperation(name, args = {}, env = process.env, locale = e
     if (unc(args.target) || unc(args.workingDirectory)) return verdict('deny', 'WCU_POLICY_DENIED: network application paths are not supported.');
     const argText = String(args.arguments ?? '').trim();
     const commandHost = argText ? commandHostName(args.target, env) : null;
-    if (commandHost) return verdict('deny', `LAUNCH_COMMAND_REFUSED: ${commandHost} runs the commands in its arguments. launch_app starts command interpreters and script hosts only without arguments; run commands with DSH's own shell tool.`);
+    if (commandHost) return verdict('deny', `LAUNCH_COMMAND_REFUSED: ${commandHost} runs the commands in its arguments. launch_app starts command interpreters and script hosts only without arguments; run commands with Antigravity's own shell tool.`);
     if (argText || isLnkTarget(args.target)) {
       const prompt = argText
         ? formatText(strings.approveLaunchArgs, String(args.target ?? ''), argText)
@@ -323,7 +323,7 @@ function classifyUrl(value, env = process.env, locale = env?.WCU_LOCALE || syste
   if (local) {
     const {ports, pending} = readHostPorts(env);
     if (pending) throw Error('WCU_POLICY_UNAVAILABLE: host address policy is starting.');
-    if (ports.includes(effectivePort)) return verdict('deny', 'WCU_POLICY_DENIED: this address belongs to the DSH host.');
+    if (ports.includes(effectivePort)) return verdict('deny', 'WCU_POLICY_DENIED: this address belongs to the Antigravity host.');
   }
   if (scheme === 'file:') {
     if (host && host !== 'localhost') return verdict('deny', 'WCU_POLICY_DENIED: network file URLs are blocked.');
@@ -464,7 +464,7 @@ export function assertOperation(name, args, {env = process.env, approved = false
   }
 }
 
-// A grant exists only after DSH has passed its approval gate. It is bound to
+// A grant exists only after Antigravity has passed its approval gate. It is bound to
 // this call's exact arguments, expires quickly and is consumed once by MCP.
 export function mintGrant(name, args, secret, now = Date.now()) {
   const body = {name: short(name), args, nonce: randomUUID(), expires: now + 120000};
@@ -507,11 +507,11 @@ export function consumeGrant(token, name, args, secret, used, now = Date.now(), 
   } catch (error) { if (error.code === 'WCU_APPROVAL_STATE_UNAVAILABLE') throw error; return false; }
 }
 
-// DSH's "full access" preset: no approval prompts (policy never) and no file
-// sandbox. DSH rejects every approval request under policy never, so asking
+// Antigravity's "full access" preset: no approval prompts (policy never) and no file
+// sandbox. Antigravity rejects every approval request under policy never, so asking
 // would only break these operations for a user who chose not to be asked,
 // in a session whose shell tool can already run any command. Restricted
-// presets with policy never still get the ask, which DSH then rejects.
+// presets with policy never still get the ask, which Antigravity then rejects.
 export function sessionSkipsApproval(ctx, exec) {
   const session = exec?.agent?.session;
   if (!session) return false;

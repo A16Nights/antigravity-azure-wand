@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { trustedRequest } from './diagnostics.mjs';
 import { consumeGrant, mintGrant } from './policy.mjs';
 
-export const HYPERV_ROUTE = '/dsh-computer-use-win/api/hyperv';
+export const HYPERV_ROUTE = '/azure-wand/api/hyperv';
 const script = fileURLToPath(new URL('../scripts/hyperv-desktop.ps1', import.meta.url));
 const powershell = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
 const pngHeader = Buffer.from('89504e470d0a1a0a', 'hex');
@@ -16,7 +16,7 @@ const ownPng = /^[a-f0-9-]{36}\.png$/;
 let nextSweep = 0;
 
 function start(mode, name, env = process.env) {
-  if (process.platform !== 'win32') throw new Error('WCU_HYPERV_UNAVAILABLE: use a native Windows DSH host to run in Hyper-V.');
+  if (process.platform !== 'win32') throw new Error('WCU_HYPERV_UNAVAILABLE: use a native Windows Antigravity host to run in Hyper-V.');
   // A saved name controls one exact VM. Nothing from a tool request becomes a command.
   if (typeof name !== 'string' || !name.trim() || name.startsWith('-') || /[\u0000-\u001f]/.test(name)) {
     throw new Error('WCU_HYPERV_VM_REQUIRED: choose a local Hyper-V virtual machine in Computer Use settings.');
@@ -126,7 +126,7 @@ async function relay() {
   const send = value => process.stdout.write(JSON.stringify(value) + '\n');
   const pending = new Set();
   const usedGrants = new Map();
-  const screenshots = path.join(os.tmpdir(), 'dsh-wcu-isolated-screenshots');
+  const screenshots = path.join(os.tmpdir(), 'azure-wand-isolated-screenshots');
   const clientInput = createInterface({ input: process.stdin, crlfDelay: Infinity });
   worker.stdin.on('error', () => {});
   let lastError = '';

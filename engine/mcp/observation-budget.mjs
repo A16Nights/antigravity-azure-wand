@@ -69,7 +69,7 @@ export function cutTree(result, maxBytes) {
   return { tree: firstNodes(full, best).tree, kept: best, total };
 }
 
-const SPILL_DIR = path.join(os.tmpdir(), 'dsh-wcu-observations');
+const SPILL_DIR = path.join(os.tmpdir(), 'azure-wand-observations');
 const SPILL_RE = /^[a-f0-9-]{36}\.json$/;
 let nextSweep = 0;
 // The whole result, for reading with a file tool. Kept 30 minutes, like screenshots.
