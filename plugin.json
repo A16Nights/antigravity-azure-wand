@@ -1,19 +1,18 @@
 {
-  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "azure-wand",
   "displayName": "苍蓝魔杖",
-  "version": "1.3.1",
-  "logo": "assets/logo.svg",
+  "version": "1.3.2",
   "description": "苍蓝魔杖（Azure Wand）— Windows 桌面与网页低打扰可视化操控插件：内置 26 项 Windows UIA / OCR / 后台网页 CDP 工具 + 独立输入 15 状态动态 AI 光标（严格不动真实鼠标、不抢焦点），支持 4 套苍蓝玻璃思考浮窗、自定义鼠标标签、Esc / Ctrl+Alt+Q 急停与高度可定制的苍蓝侧栏控制台。",
-  "suggestedPrompts": [
-    "打开苍蓝魔杖控制面板并检查当前桌面操控引擎状态",
-    "列出我电脑上当前打开的窗口并读取指定窗口的界面结构",
-    "在低打扰模式下帮我打开并检查一个网页或桌面软件的状态"
-  ],
+  "logo": "assets/logo.svg",
   "author": {
     "name": "A16Nights",
     "url": "https://github.com/A16Nights"
   },
   "homepage": "https://github.com/A16Nights/antigravity-azure-wand",
-  "repository": "https://github.com/A16Nights/antigravity-azure-wand"
+  "repository": "https://github.com/A16Nights/antigravity-azure-wand",
+  "suggestedPrompts": [
+    "打开苍蓝魔杖控制面板并检查当前桌面操控引擎状态",
+    "列出我电脑上当前打开的窗口并读取指定窗口的界面结构",
+    "在低打扰模式下帮我打开并检查一个网页或桌面软件的状态"
+  ]
 }

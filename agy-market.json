@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "pluginRoot": ".",
+  "categories": [
+    "mcp-integrations",
+    "automation"
+  ],
+  "tags": [
+    "windows",
+    "uia",
+    "ocr",
+    "cdp",
+    "desktop-automation",
+    "cursor",
+    "azure-suite"
+  ],
+  "minAntigravityVersion": "2.35.0",
+  "platforms": [
+    "win32"
+  ]
+}
