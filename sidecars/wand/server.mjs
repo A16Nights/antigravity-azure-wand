@@ -220,7 +220,8 @@ const server = http.createServer(async (req, res) => {
       }
       if (req.method === "GET" && pathname.startsWith("/api/cursor-preview/")) {
         const stateId = decodeURIComponent(pathname.slice("/api/cursor-preview/".length)).replace(/[^a-z0-9_-]/gi, "");
-        const filePath = store.resolveCursorPreviewPath(stateId);
+        const explicitPack = String(url.searchParams.get("pack") || "").trim();
+        const filePath = store.resolveCursorPreviewPath(stateId, store.readConfig(), explicitPack);
         if (!filePath || !fs.existsSync(filePath)) {
           res.writeHead(404);
           res.end();
@@ -231,6 +232,34 @@ const server = http.createServer(async (req, res) => {
           "Cache-Control": "no-store"
         });
         fs.createReadStream(filePath).pipe(res);
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/cursor-packs/import-path") {
+        const body = await readBody(req);
+        const result = store.importExternalCursorPack({
+          sourcePath: String(body.sourcePath || "").trim(),
+          packName: String(body.packName || "").trim(),
+          desc: String(body.desc || "").trim(),
+          activate: body.activate !== false
+        });
+        sendJson(res, 200, result);
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/cursor-packs/import-files") {
+        const body = await readBody(req, 32 * 1024 * 1024);
+        const result = store.importUploadedCursorFiles({
+          files: Array.isArray(body.files) ? body.files : [],
+          packName: String(body.packName || "").trim(),
+          desc: String(body.desc || "").trim(),
+          activate: body.activate !== false
+        });
+        sendJson(res, 200, result);
+        return;
+      }
+      if (req.method === "POST" && pathname === "/api/cursor-packs/delete") {
+        const body = await readBody(req);
+        const result = store.deleteCursorPack(String(body.packId || ""));
+        sendJson(res, 200, result);
         return;
       }
       if (req.method === "POST" && pathname === "/api/independent/test") {

@@ -12,7 +12,7 @@ try {
 
 # AI 光标模式：companion = 一直陪着；clean = 用一下就收。
 # 插件 config / 环境变量都可以改，运行中还能用 setCursorMode 切换。
-$script:cursorMode = if ($env:DSH_INPUT_CURSOR_MODE -eq 'clean') { 'clean' } else { 'companion' }
+$script:cursorMode = if ($env:DSH_INPUT_CURSOR_MODE -eq 'clean' -or $env:DSH_INPUT_CURSOR_MODE -eq 'avoidance') { $env:DSH_INPUT_CURSOR_MODE } else { 'companion' }
 $script:cursorHoldMs = 2600
 if ($env:DSH_INPUT_CURSOR_HOLD_MS) {
   try { $script:cursorHoldMs = [int]$env:DSH_INPUT_CURSOR_HOLD_MS } catch { }
@@ -963,6 +963,8 @@ public static class DshOverlay
     static ManualResetEvent ready = new ManualResetEvent(false);
     static bool pausedState = false;
     static readonly Dictionary<string, Image> styleImages = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
+    static readonly Dictionary<string, int> styleFrameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    static readonly Dictionary<string, int> styleIntervals = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     public static bool LastSetWindowPosOk = false;
     public static int LastSetWindowPosError = 0;
     public static int LastX = 0;
@@ -979,30 +981,89 @@ public static class DshOverlay
         "help", "handwriting", "dgn1", "dgn2", "alternate"
     };
 
+    static int DetectValidFrameCount(Bitmap bmp)
+    {
+        int cols = 8;
+        int cell = bmp.Width >= 256 ? (bmp.Width / cols) : 64;
+        if (cell < 16) cell = 64;
+        int rows = Math.Max(1, bmp.Height / cell);
+        int total = cols * rows;
+        int lastNonEmpty = 0;
+        for (int idx = 0; idx < total; idx++)
+        {
+            int c = idx % cols;
+            int r = idx / cols;
+            bool hasPx = false;
+            int step = Math.Max(2, cell / 16);
+            for (int y = 0; y < cell && !hasPx; y += step)
+            {
+                for (int x = 0; x < cell; x += step)
+                {
+                    if (bmp.GetPixel(c * cell + x, r * cell + y).A > 12) { hasPx = true; break; }
+                }
+            }
+            if (hasPx) lastNonEmpty = idx + 1;
+        }
+        return Math.Max(1, lastNonEmpty);
+    }
+
     public static void ConfigureStyles(string assetDir)
     {
+        ConfigureStylesWithOverrides(assetDir, null, null, null);
+    }
+
+    public static void ConfigureStylesWithOverrides(
+        string assetDir,
+        Dictionary<string, string> overrides,
+        Dictionary<string, int> metaFrames,
+        Dictionary<string, int> metaIntervals)
+    {
         var next = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
+        var nextFrames = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var nextIntervals = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < StyleNames.Length; i++)
         {
             string name = StyleNames[i];
-            string path = System.IO.Path.Combine(assetDir, name + ".png");
-            if (!System.IO.File.Exists(path)) continue;
+            string path = null;
+            if (overrides != null && overrides.ContainsKey(name) && !string.IsNullOrEmpty(overrides[name]) && System.IO.File.Exists(overrides[name]))
+            {
+                path = overrides[name];
+            }
+            else if (!string.IsNullOrEmpty(assetDir))
+            {
+                string cand = System.IO.Path.Combine(assetDir, name + ".png");
+                if (System.IO.File.Exists(cand)) path = cand;
+            }
+            if (string.IsNullOrEmpty(path)) continue;
             try
             {
                 byte[] bytes = System.IO.File.ReadAllBytes(path);
                 using (var ms = new System.IO.MemoryStream(bytes))
                 using (var tmp = Image.FromStream(ms))
                 {
-                    next[name] = new Bitmap(tmp);
+                    Bitmap bmp = new Bitmap(tmp);
+                    next[name] = bmp;
+                    int fc = (metaFrames != null && metaFrames.ContainsKey(name) && metaFrames[name] > 0)
+                        ? metaFrames[name]
+                        : DetectValidFrameCount(bmp);
+                    nextFrames[name] = fc;
+                    int iv = (metaIntervals != null && metaIntervals.ContainsKey(name) && metaIntervals[name] >= 20)
+                        ? metaIntervals[name]
+                        : 60;
+                    nextIntervals[name] = iv;
                 }
             }
             catch { }
         }
         styleImages.Clear();
+        styleFrameCounts.Clear();
+        styleIntervals.Clear();
         foreach (var kv in next) styleImages[kv.Key] = kv.Value;
+        foreach (var kv in nextFrames) styleFrameCounts[kv.Key] = kv.Value;
+        foreach (var kv in nextIntervals) styleIntervals[kv.Key] = kv.Value;
         if (form != null)
         {
-            Run(delegate() { form.LoadSprites(styleImages); form.ApplyStyle(cursorStyle); }, 600);
+            Run(delegate() { form.LoadSprites(styleImages, styleFrameCounts, styleIntervals); form.ApplyStyle(cursorStyle); }, 600);
         }
     }
 
@@ -1031,7 +1092,7 @@ public static class DshOverlay
                 try { Console.Error.WriteLine("overlay fatal: " + e.ExceptionObject); } catch { }
             };
             form = new OverlayForm();
-            form.LoadSprites(styleImages);
+            form.LoadSprites(styleImages, styleFrameCounts, styleIntervals);
             form.ApplyStyle(cursorStyle);
             form.Paused = pausedState;
             form.ApplyMode(cursorMode, cursorHoldMs);
@@ -1071,7 +1132,7 @@ public static class DshOverlay
 
     public static void SetMode(string mode, int holdMs)
     {
-        cursorMode = (mode == "clean") ? "clean" : "companion";
+        cursorMode = (mode == "clean" || mode == "avoidance") ? mode : "companion";
         cursorHoldMs = holdMs > 0 ? holdMs : 2600;
         if (form == null) return;
         Run(delegate() { form.ApplyMode(cursorMode, cursorHoldMs); }, 400);
@@ -1133,21 +1194,45 @@ public static class DshOverlay
 
     sealed class OverlayForm : Form
     {
-        const int Cell = 64;
+        [StructLayout(LayoutKind.Sequential)]
+        struct ULW_POINT { public int x; public int y; }
+        [StructLayout(LayoutKind.Sequential)]
+        struct ULW_SIZE { public int cx; public int cy; }
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        struct BLENDFUNCTION { public byte BlendOp; public byte BlendFlags; public byte SourceConstantAlpha; public byte AlphaFormat; }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref ULW_POINT pptDst, ref ULW_SIZE psize, IntPtr hdcSrc, ref ULW_POINT pptSrc, int crKey, ref BLENDFUNCTION pblend, int dwFlags);
+        [DllImport("gdi32.dll", SetLastError = true)]
+        static extern IntPtr CreateCompatibleDC(IntPtr hDC);
+        [DllImport("gdi32.dll", SetLastError = true)]
+        static extern bool DeleteDC(IntPtr hdc);
+        [DllImport("gdi32.dll", SetLastError = true)]
+        static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+        [DllImport("gdi32.dll", SetLastError = true)]
+        static extern bool DeleteObject(IntPtr hObject);
+
         const int Cols = 8;
         readonly System.Windows.Forms.Timer animTimer;
         readonly System.Windows.Forms.Timer hideTimer;
+        readonly System.Windows.Forms.Timer fadeTimer;
         string mode = "companion";
         int holdMs = 2600;
         Image sprite;
         Dictionary<string, Image> sprites;
+        Dictionary<string, int> frameCounts;
+        Dictionary<string, int> frameIntervals;
         string baseStyle = "pointer";
         int displaySize = 64;
+        int cellSize = 64;
         int lastX = 0;
         int lastY = 0;
         int frame = 0;
         int frameCount = 1;
         bool paused = false;
+        byte currentAlpha = 255;
+        byte targetAlpha = 255;
+        DateTime lastActiveUtc = DateTime.UtcNow;
 
         public OverlayForm()
         {
@@ -1156,20 +1241,45 @@ public static class DshOverlay
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
             Size = new Size(displaySize, displaySize);
-            BackColor = Color.Fuchsia;
-            TransparencyKey = Color.Fuchsia;
             Visible = false;
-            SetStyle(ControlStyles.SupportsTransparentBackColor | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
             animTimer = new System.Windows.Forms.Timer();
             animTimer.Interval = 60;
-            animTimer.Tick += delegate { if (frameCount > 1) { frame = (frame + 1) % frameCount; ApplyFrameRegion(); Invalidate(); } };
+            animTimer.Tick += delegate
+            {
+                if (!Visible) return;
+                if (frameCount > 1) frame = (frame + 1) % frameCount;
+                PresentFrame();
+            };
             hideTimer = new System.Windows.Forms.Timer();
             hideTimer.Tick += delegate { hideTimer.Stop(); HideNow(); };
+            fadeTimer = new System.Windows.Forms.Timer();
+            fadeTimer.Interval = 30;
+            fadeTimer.Tick += delegate
+            {
+                if (!Visible) { fadeTimer.Stop(); return; }
+                if (mode == "avoidance")
+                {
+                    double idleMs = (DateTime.UtcNow - lastActiveUtc).TotalMilliseconds;
+                    targetAlpha = idleMs >= 800 ? (byte)28 : (byte)255;
+                }
+                else
+                {
+                    targetAlpha = 255;
+                }
+                if (currentAlpha != targetAlpha)
+                {
+                    int diff = targetAlpha - currentAlpha;
+                    int step = targetAlpha < currentAlpha ? 42 : 76; // ~180ms fade out, ~80ms fade in
+                    if (Math.Abs(diff) <= step) currentAlpha = targetAlpha;
+                    else currentAlpha = (byte)(currentAlpha + (diff > 0 ? step : -step));
+                    PresentFrame();
+                }
+            };
         }
 
         public void ApplyMode(string m, int h)
         {
-            mode = (m == "clean") ? "clean" : "companion";
+            mode = (m == "clean" || m == "avoidance") ? m : "companion";
             holdMs = h > 0 ? h : 2600;
             if (mode == "clean" && Visible)
             {
@@ -1181,18 +1291,34 @@ public static class DshOverlay
             {
                 hideTimer.Stop();
             }
+            if (mode == "avoidance" && Visible)
+            {
+                lastActiveUtc = DateTime.UtcNow;
+                currentAlpha = 255;
+                targetAlpha = 255;
+                fadeTimer.Start();
+            }
+            else
+            {
+                fadeTimer.Stop();
+                currentAlpha = 255;
+                targetAlpha = 255;
+                if (Visible) PresentFrame();
+            }
         }
 
-        public void LoadSprites(Dictionary<string, Image> images)
+        public void LoadSprites(Dictionary<string, Image> images, Dictionary<string, int> counts = null, Dictionary<string, int> intervals = null)
         {
             sprites = images != null ? images : new Dictionary<string, Image>();
+            frameCounts = counts != null ? counts : new Dictionary<string, int>();
+            frameIntervals = intervals != null ? intervals : new Dictionary<string, int>();
             if (!sprites.ContainsKey(baseStyle))
             {
                 string first = null;
                 foreach (string key in sprites.Keys) { first = key; break; }
                 baseStyle = first != null ? first : "pointer";
             }
-            if (sprites.ContainsKey(baseStyle)) ApplySprite(sprites[baseStyle]);
+            if (sprites.ContainsKey(baseStyle)) ApplySprite(baseStyle, sprites[baseStyle]);
         }
 
         public void ApplyStyle(string style)
@@ -1201,16 +1327,26 @@ public static class DshOverlay
             string key = string.IsNullOrEmpty(style) ? "pointer" : style.ToLowerInvariant();
             if (!sprites.ContainsKey(key)) key = sprites.ContainsKey("pointer") ? "pointer" : baseStyle;
             baseStyle = key;
-            if (!paused && sprites.ContainsKey(key)) ApplySprite(sprites[key]);
+            if (!paused && sprites.ContainsKey(key)) ApplySprite(key, sprites[key]);
         }
 
-        void ApplySprite(Image img)
+        void ApplySprite(string key, Image img)
         {
             if (img == null) return;
             sprite = img;
+            cellSize = img.Width >= 256 ? Math.Max(32, img.Width / Cols) : 64;
+            int rows = Math.Max(1, img.Height / cellSize);
+            int maxPossible = Math.Max(1, Cols * rows);
+            int configured = (frameCounts != null && frameCounts.ContainsKey(key) && frameCounts[key] > 0)
+                ? frameCounts[key]
+                : maxPossible;
+            frameCount = Math.Max(1, Math.Min(maxPossible, configured));
             frame = 0;
-            frameCount = Math.Max(1, (img.Width / Cell) * (img.Height / Cell));
-            Invalidate();
+            int iv = (frameIntervals != null && frameIntervals.ContainsKey(key) && frameIntervals[key] >= 20)
+                ? frameIntervals[key]
+                : 60;
+            animTimer.Interval = iv;
+            if (Visible) PresentFrame();
         }
 
         public void ApplySize(int size)
@@ -1219,18 +1355,13 @@ public static class DshOverlay
             if (size == displaySize && Width == size && Height == size) return;
             displaySize = size;
             Size = new Size(size, size);
-            ApplySprite(sprite);
             if (Visible)
             {
                 Location = new Point(lastX, lastY);
                 DshInput.SetWindowPos(Handle, DshInput.HWND_TOPMOST, lastX, lastY, size, size,
                     (uint)(DshInput.SWP_NOACTIVATE | DshInput.SWP_SHOWWINDOW));
+                PresentFrame();
             }
-        }
-
-        void ApplyFrameRegion()
-        {
-            // color-key 透明方案不需要 Region；保留空方法避免大改调用点。
         }
 
         public bool Paused
@@ -1240,8 +1371,8 @@ public static class DshOverlay
             {
                 paused = value;
                 if (sprites == null) return;
-                if (paused && sprites.ContainsKey("unavailiable")) ApplySprite(sprites["unavailiable"]);
-                else if (sprites.ContainsKey(baseStyle)) ApplySprite(sprites[baseStyle]);
+                if (paused && sprites.ContainsKey("unavailiable")) ApplySprite("unavailiable", sprites["unavailiable"]);
+                else if (sprites.ContainsKey(baseStyle)) ApplySprite(baseStyle, sprites[baseStyle]);
             }
         }
 
@@ -1252,6 +1383,7 @@ public static class DshOverlay
             get
             {
                 CreateParams cp = base.CreateParams;
+                cp.ExStyle |= 0x00080000; // WS_EX_LAYERED
                 cp.ExStyle |= 0x00000020; // WS_EX_TRANSPARENT
                 cp.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE
                 cp.ExStyle |= 0x00000080; // WS_EX_TOOLWINDOW
@@ -1261,9 +1393,11 @@ public static class DshOverlay
 
         public void DisplayAt(int x, int y)
         {
-            // 素材热点是 (0,0)：箭头尖就是点击点，所以光标窗口左上角对准 (x,y)
             lastX = x;
             lastY = y;
+            lastActiveUtc = DateTime.UtcNow;
+            currentAlpha = 255;
+            targetAlpha = 255;
             Location = new Point(x, y);
             if (!Visible) Show();
             TopMost = false;
@@ -1274,7 +1408,6 @@ public static class DshOverlay
             DshOverlay.LastSetWindowPosOk = ok;
             DshOverlay.LastSetWindowPosError = Marshal.GetLastWin32Error();
             frame = 0;
-            ApplyFrameRegion();
             animTimer.Start();
             hideTimer.Stop();
             if (mode == "clean")
@@ -1282,46 +1415,79 @@ public static class DshOverlay
                 hideTimer.Interval = holdMs;
                 hideTimer.Start();
             }
-            Invalidate();
-            Update();
+            if (mode == "avoidance")
+            {
+                fadeTimer.Start();
+            }
+            else
+            {
+                fadeTimer.Stop();
+            }
+            PresentFrame();
         }
 
         public void HideNow()
         {
             hideTimer.Stop();
             animTimer.Stop();
+            fadeTimer.Stop();
             Hide();
         }
 
-        protected override void OnPaintBackground(PaintEventArgs e)
+        void PresentFrame()
         {
-            e.Graphics.Clear(BackColor);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            if (sprite != null)
+            if (!IsHandleCreated || IsDisposed || displaySize < 1) return;
+            using (var canvas = new Bitmap(displaySize, displaySize, System.Drawing.Imaging.PixelFormat.Format32bppPArgb))
             {
-                int col = frame % Cols;
-                int row = frame / Cols;
-                if (row * Cell + Cell <= sprite.Height)
+                using (var g = Graphics.FromImage(canvas))
                 {
-                    e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-                    e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-                    e.Graphics.DrawImage(sprite, new Rectangle(0, 0, displaySize, displaySize),
-                        new Rectangle(col * Cell, row * Cell, Cell, Cell), GraphicsUnit.Pixel);
-                    return;
+                    g.Clear(Color.Transparent);
+                    if (sprite != null)
+                    {
+                        int col = frame % Cols;
+                        int row = frame / Cols;
+                        if (row * cellSize + cellSize <= sprite.Height && col * cellSize + cellSize <= sprite.Width)
+                        {
+                            if (cellSize <= 64)
+                            {
+                                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                                g.PixelOffsetMode = PixelOffsetMode.Half;
+                            }
+                            else
+                            {
+                                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                                g.SmoothingMode = SmoothingMode.HighQuality;
+                                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                            }
+                            g.DrawImage(sprite, new Rectangle(0, 0, displaySize, displaySize),
+                                new Rectangle(col * cellSize, row * cellSize, cellSize, cellSize), GraphicsUnit.Pixel);
+                        }
+                    }
+                    else
+                    {
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        Color ring = Paused ? Color.Orange : Color.DeepSkyBlue;
+                        using (Pen pen = new Pen(ring, 3)) g.DrawEllipse(pen, 8, 8, displaySize - 17, displaySize - 17);
+                        using (SolidBrush dot = new SolidBrush(Color.White)) g.FillEllipse(dot, displaySize / 2 - 3, displaySize / 2 - 3, 6, 6);
+                    }
                 }
-            }
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            Color ring = Paused ? Color.Orange : Color.DeepSkyBlue;
-            using (Pen pen = new Pen(ring, 3))
-            {
-                e.Graphics.DrawEllipse(pen, 8, 8, Width - 17, Height - 17);
-            }
-            using (SolidBrush dot = new SolidBrush(Color.White))
-            {
-                e.Graphics.FillEllipse(dot, Width / 2 - 3, Height / 2 - 3, 6, 6);
+                IntPtr memDc = CreateCompatibleDC(IntPtr.Zero);
+                IntPtr hBmp = canvas.GetHbitmap(Color.FromArgb(0));
+                IntPtr prev = SelectObject(memDc, hBmp);
+                try
+                {
+                    var dst = new ULW_POINT { x = lastX, y = lastY };
+                    var src = new ULW_POINT { x = 0, y = 0 };
+                    var sz = new ULW_SIZE { cx = displaySize, cy = displaySize };
+                    var blend = new BLENDFUNCTION { BlendOp = 0, BlendFlags = 0, SourceConstantAlpha = currentAlpha, AlphaFormat = 1 };
+                    UpdateLayeredWindow(Handle, IntPtr.Zero, ref dst, ref sz, memDc, ref src, 0, ref blend, 2);
+                }
+                finally
+                {
+                    SelectObject(memDc, prev);
+                    DeleteObject(hBmp);
+                    DeleteDC(memDc);
+                }
             }
         }
     }
@@ -1614,7 +1780,7 @@ function Invoke-Request($req) {
     'status' { return Get-StatusResult }
     'setCursorMode' {
       $m = [string]$req.mode
-      if ($m -eq 'clean' -or $m -eq 'companion') { $script:cursorMode = $m }
+      if ($m -eq 'clean' -or $m -eq 'companion' -or $m -eq 'avoidance') { $script:cursorMode = $m }
       if ($null -ne $req.holdMs) { $script:cursorHoldMs = [int]$req.holdMs }
       [DshOverlay]::SetMode($script:cursorMode, $script:cursorHoldMs)
       return @{ ok = $true; cursorMode = $script:cursorMode; cursorHoldMs = $script:cursorHoldMs }
@@ -1627,16 +1793,13 @@ function Invoke-Request($req) {
     }
     'setAssetDir' {
       $dir = [string]$req.dir
-      if ($dir -and (Test-Path $dir)) {
-        [DshOverlay]::ConfigureStyles($dir)
-        [DshOverlay]::SetStyle($script:cursorStyle)
-        [DshOverlay]::SetSize($script:cursorSize)
-        return @{ ok = $true; dir = $dir; cursorStyle = $script:cursorStyle }
+      if (-not ($dir -and (Test-Path $dir))) {
+        $dir = Join-Path $PSScriptRoot 'assets\cursors'
       }
-      $fallback = Join-Path $PSScriptRoot 'assets\cursors'
-      [DshOverlay]::ConfigureStyles($fallback)
+      Load-OverlayAssets $dir $req.overrides
       [DshOverlay]::SetStyle($script:cursorStyle)
-      return @{ ok = $true; dir = $fallback; fallback = $true; cursorStyle = $script:cursorStyle }
+      [DshOverlay]::SetSize($script:cursorSize)
+      return @{ ok = $true; dir = $dir; cursorStyle = $script:cursorStyle }
     }
     'setCursorStyle' {
       $s = ([string]$req.style).ToLower()
@@ -2067,11 +2230,56 @@ function Invoke-Request($req) {
   }
 }
 
+function Load-OverlayAssets($dir, $overridesObj) {
+  $ovDict = New-Object 'System.Collections.Generic.Dictionary[string,string]'
+  $fcDict = New-Object 'System.Collections.Generic.Dictionary[string,int]'
+  $ivDict = New-Object 'System.Collections.Generic.Dictionary[string,int]'
+
+  $readMetaInto = {
+    param([string]$metaDir, [string]$onlyState)
+    $metaFile = Join-Path $metaDir 'meta.json'
+    if (-not (Test-Path $metaFile)) { return }
+    try {
+      $meta = [IO.File]::ReadAllText($metaFile, [Text.Encoding]::UTF8) | ConvertFrom-Json
+      if ($null -ne $meta.states) {
+        foreach ($prop in $meta.states.PSObject.Properties) {
+          $k = [string]$prop.Name
+          if ($onlyState -and $k -ne $onlyState) { continue }
+          $v = $prop.Value
+          if ($null -ne $v.frames) { $fcDict[$k] = [int]$v.frames }
+          if ($null -ne $v.intervalMs) { $ivDict[$k] = [int]$v.intervalMs }
+        }
+      }
+    } catch { }
+  }
+
+  & $readMetaInto $dir $null
+
+  if ($null -ne $overridesObj) {
+    $props = if ($overridesObj -is [hashtable]) { $overridesObj.GetEnumerator() } else { $overridesObj.PSObject.Properties }
+    foreach ($p in $props) {
+      $k = if ($overridesObj -is [hashtable]) { [string]$p.Key } else { [string]$p.Name }
+      $val = [string]$p.Value
+      if ($val -and (Test-Path $val)) {
+        $ovDict[$k] = $val
+        $ovParent = [System.IO.Path]::GetDirectoryName($val)
+        if ($ovParent) { & $readMetaInto $ovParent $k }
+      }
+    }
+  }
+
+  [DshOverlay]::ConfigureStylesWithOverrides($dir, $ovDict, $fcDict, $ivDict)
+}
+
 # ---------------------------------------------------------------- main
 
 $assetDir = if ($env:AZURE_WAND_CURSOR_DIR -and (Test-Path $env:AZURE_WAND_CURSOR_DIR)) { $env:AZURE_WAND_CURSOR_DIR } else { Join-Path $PSScriptRoot 'assets\cursors' }
+$initOverrides = $null
+if ($env:AZURE_WAND_CURSOR_OVERRIDES) {
+  try { $initOverrides = $env:AZURE_WAND_CURSOR_OVERRIDES | ConvertFrom-Json } catch { }
+}
 try {
-  [DshOverlay]::ConfigureStyles($assetDir)
+  Load-OverlayAssets $assetDir $initOverrides
   [DshOverlay]::SetStyle($script:cursorStyle)
   [DshOverlay]::SetMode($script:cursorMode, $script:cursorHoldMs)
   [DshOverlay]::SetSize($script:cursorSize)

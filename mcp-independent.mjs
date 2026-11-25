@@ -12,31 +12,34 @@ let lastSyncKey = "";
 
 function getEngine(cfg) {
   const assetDir = store.resolveCursorAssetsDir(cfg);
+  const stateOverrides = store.resolveStateOverridesMap(cfg);
   const syncKey = JSON.stringify([
     cfg.independentCursorMode,
     cfg.independentCursorHoldMs,
     cfg.independentCursorSize,
-    assetDir
+    assetDir,
+    stateOverrides
   ]);
   if (!engine) {
     engine = new IndependentInputEngine({
       cursorMode: cfg.independentCursorMode,
       cursorHoldMs: cfg.independentCursorHoldMs,
       cursorSize: cfg.independentCursorSize,
-      assetDir
+      assetDir,
+      stateOverrides
     });
     lastSyncKey = syncKey;
-    return { engine, needSync: false, assetDir };
+    return { engine, needSync: false, assetDir, stateOverrides };
   }
   const needSync = syncKey !== lastSyncKey;
   lastSyncKey = syncKey;
-  return { engine, needSync, assetDir };
+  return { engine, needSync, assetDir, stateOverrides };
 }
 
-async function syncEngineConfig(inst, cfg, assetDir) {
+async function syncEngineConfig(inst, cfg, assetDir, stateOverrides) {
   await inst.setCursorMode(cfg.independentCursorMode, cfg.independentCursorHoldMs);
   await inst.setCursorSize(cfg.independentCursorSize);
-  await inst.setAssetDir(assetDir);
+  await inst.setAssetDir(assetDir, stateOverrides);
 }
 
 const TOOL_DEF = {
@@ -133,9 +136,9 @@ async function handleToolCall(args = {}) {
     return { isError: true, content: [{ type: "text", text: "独立输入仅支持 Windows 平台。" }] };
   }
 
-  const { engine: inst, needSync, assetDir } = getEngine(cfg);
+  const { engine: inst, needSync, assetDir, stateOverrides } = getEngine(cfg);
   if (needSync && inst.ready) {
-    await syncEngineConfig(inst, cfg, assetDir);
+    await syncEngineConfig(inst, cfg, assetDir, stateOverrides);
   }
 
   const reqMode = ["auto", "uia", "message"].includes(args.mode) ? args.mode : "auto";

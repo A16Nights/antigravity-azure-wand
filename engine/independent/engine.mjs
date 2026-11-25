@@ -60,14 +60,16 @@ export class IndependentInputEngine {
     cursorHoldMs = 2600,
     cursorSize = 64,
     cursorState = "pointer",
-    assetDir = DEFAULT_ASSETS
+    assetDir = DEFAULT_ASSETS,
+    stateOverrides = {}
   } = {}) {
     this.log = log;
-    this.cursorMode = cursorMode === "clean" ? "clean" : "companion";
+    this.cursorMode = ["clean", "avoidance"].includes(cursorMode) ? cursorMode : "companion";
     this.cursorHoldMs = Number(cursorHoldMs) > 0 ? Number(cursorHoldMs) : 2600;
     this.cursorSize = clampSize(cursorSize);
     this.cursorState = clampStyle(cursorState);
     this.assetDir = assetDir && existsSync(assetDir) ? assetDir : DEFAULT_ASSETS;
+    this.stateOverrides = stateOverrides && typeof stateOverrides === "object" ? { ...stateOverrides } : {};
     this.proc = null;
     this.ready = false;
     this.starting = null;
@@ -79,7 +81,7 @@ export class IndependentInputEngine {
   }
 
   async setCursorMode(mode, holdMs) {
-    if (mode === "clean" || mode === "companion") this.cursorMode = mode;
+    if (["clean", "companion", "avoidance"].includes(mode)) this.cursorMode = mode;
     if (Number(holdMs) > 0) this.cursorHoldMs = Math.max(400, Math.min(15000, Math.round(Number(holdMs))));
     if (this.ready && this.proc && this.proc.exitCode === null) {
       return this.request("setCursorMode", { mode: this.cursorMode, holdMs: this.cursorHoldMs });
@@ -103,11 +105,14 @@ export class IndependentInputEngine {
     return { ok: true, cursorState: this.cursorState, pending: true };
   }
 
-  async setAssetDir(dir) {
+  async setAssetDir(dir, stateOverrides = null) {
     const resolved = dir && existsSync(dir) ? dir : DEFAULT_ASSETS;
     this.assetDir = resolved;
+    if (stateOverrides && typeof stateOverrides === "object") {
+      this.stateOverrides = { ...stateOverrides };
+    }
     if (this.ready && this.proc && this.proc.exitCode === null) {
-      return this.request("setAssetDir", { dir: resolved });
+      return this.request("setAssetDir", { dir: resolved, overrides: this.stateOverrides });
     }
     return { ok: true, dir: resolved, pending: true };
   }
@@ -141,7 +146,8 @@ export class IndependentInputEngine {
           DSH_INPUT_CURSOR_HOLD_MS: String(this.cursorHoldMs),
           DSH_INPUT_CURSOR_SIZE: String(this.cursorSize),
           DSH_INPUT_CURSOR_STYLE: this.cursorState,
-          AZURE_WAND_CURSOR_DIR: this.assetDir
+          AZURE_WAND_CURSOR_DIR: this.assetDir,
+          AZURE_WAND_CURSOR_OVERRIDES: JSON.stringify(this.stateOverrides || {})
         }
       }
     );
