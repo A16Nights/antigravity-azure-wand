@@ -981,13 +981,28 @@ public static class DshOverlay
 
     public static void ConfigureStyles(string assetDir)
     {
-        styleImages.Clear();
+        var next = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < StyleNames.Length; i++)
         {
             string name = StyleNames[i];
             string path = System.IO.Path.Combine(assetDir, name + ".png");
             if (!System.IO.File.Exists(path)) continue;
-            try { styleImages[name] = Image.FromFile(path); } catch { }
+            try
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(path);
+                using (var ms = new System.IO.MemoryStream(bytes))
+                using (var tmp = Image.FromStream(ms))
+                {
+                    next[name] = new Bitmap(tmp);
+                }
+            }
+            catch { }
+        }
+        styleImages.Clear();
+        foreach (var kv in next) styleImages[kv.Key] = kv.Value;
+        if (form != null)
+        {
+            Run(delegate() { form.LoadSprites(styleImages); form.ApplyStyle(cursorStyle); }, 600);
         }
     }
 
@@ -1709,7 +1724,13 @@ function Invoke-Request($req) {
       if ($req.show -eq $false) { [DshOverlay]::Hide(); return @{ ok = $true; visible = $false; cursorMode = $script:cursorMode; cursorState = $script:cursorStyle } }
       $x = if ($null -ne $req.x) { [int]$req.x } elseif ([DshOverlay]::HasLast) { [DshOverlay]::LastX } else { [DshInput]::CursorPos()[0] }
       $y = if ($null -ne $req.y) { [int]$req.y } elseif ([DshOverlay]::HasLast) { [DshOverlay]::LastY } else { [DshInput]::CursorPos()[1] }
-      Show-StateAt 'pointer' $x $y
+      $st = $script:cursorStyle
+      if ($null -ne $req.style) {
+        $cand = ([string]$req.style).ToLower()
+        if ($script:styleNames -contains $cand) { $st = $cand }
+      }
+      if ([string]::IsNullOrWhiteSpace($st)) { $st = 'pointer' }
+      Show-StateAt $st $x $y
       return @{ ok = $true; visible = $true; x = $x; y = $y; cursorMode = $script:cursorMode; cursorSize = $script:cursorSize; cursorState = $script:cursorStyle }
     }
     'pause' {
