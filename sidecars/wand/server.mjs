@@ -15,6 +15,8 @@ import {
 } from "../../lib/sidebar-nav.mjs";
 import { handleAzureThemeHttp } from "../../lib/azure-theme.mjs";
 import { injectAzureUiKit } from "../../lib/azure-ui-kit.mjs";
+import { handleAzureOnboardingHttp, injectAzureOnboarding } from "../../lib/azure-onboarding.mjs";
+import { WAND_ONBOARDING_GUIDE } from "./onboarding-guide.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(__dirname, "..", "..");
@@ -135,7 +137,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
     const html = fs.readFileSync(HTML_PATH, "utf8");
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(injectAzureUiKit(injectSidebarToggleWidget(html, PLUGIN_ID), PLUGIN_ID));
+    res.end(injectAzureOnboarding(injectAzureUiKit(injectSidebarToggleWidget(html, PLUGIN_ID), PLUGIN_ID), "azure-wand", WAND_ONBOARDING_GUIDE));
     return;
   }
 
@@ -152,6 +154,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       if (await handleAzureThemeHttp(req, res)) return;
+    if (await handleAzureOnboardingHttp(req, res, "azure-wand", WAND_ONBOARDING_GUIDE.version)) return;
 
       if (req.method === "GET" && pathname === "/api/sidebar-nav") {
         sendJson(res, 200, {

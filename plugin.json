@@ -1,8 +1,8 @@
 {
   "name": "azure-wand",
-  "displayName": "苍蓝魔杖",
-  "version": "1.3.2",
-  "description": "苍蓝魔杖（Azure Wand）— Windows 桌面与网页低打扰可视化操控插件：内置 26 项 Windows UIA / OCR / 后台网页 CDP 工具 + 独立输入 15 状态动态 AI 光标（严格不动真实鼠标、不抢焦点），支持 4 套苍蓝玻璃思考浮窗、自定义鼠标标签、Esc / Ctrl+Alt+Q 急停与高度可定制的苍蓝侧栏控制台。",
+  "displayName": "苍蓝魔杖——Windows 桌面与网页操控",
+  "version": "1.3.3",
+  "description": "苍蓝魔杖——Windows 桌面与网页操控（Azure Wand）：Windows 桌面与网页低打扰可视化操控插件：内置 26 项 Windows UIA / OCR / 后台网页 CDP 工具 + 独立输入 15 状态动态 AI 光标（严格不动真实鼠标、不抢焦点），支持 4 套苍蓝玻璃思考浮窗、自定义鼠标标签、Esc / Ctrl+Alt+Q 急停与高度可定制的苍蓝侧栏控制台；内置首次使用交互式新手引导与真实控件定位高亮。",
   "logo": "assets/logo.svg",
   "author": {
     "name": "A16Nights",
